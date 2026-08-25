@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Local data artifacts
+# data/raw/ and data/logs/ are committed intentionally (scraper output,
+# free GitHub storage per the project spec). Only derived/regenerable and
+# large binary artifacts are ignored here.
+data/processed/**/*
+data/models/**/*
+
+# Keep data directories in git
+!data/processed/.gitkeep
+!data/models/.gitkeep
