@@ -1,0 +1,3819 @@
+/**
+ * CricXAI — 10 Eligible International Cricket Countries & Top 15 Players Database
+ * Comprehensive analysis, judgment, scouting grades, dismissal theory, and ML SHAP data.
+ */
+
+const ELIGIBLE_COUNTRIES = [
+  { id: "India", name: "India", code: "IND", flag: "🇮🇳", color: "#1E40AF" },
+  { id: "Australia", name: "Australia", code: "AUS", flag: "🇦🇺", color: "#EAB308" },
+  { id: "England", name: "England", code: "ENG", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", color: "#DC2626" },
+  { id: "South Africa", name: "South Africa", code: "SA", flag: "🇿🇦", color: "#059669" },
+  { id: "New Zealand", name: "New Zealand", code: "NZ", flag: "🇳🇿", color: "#1F2937" },
+  { id: "Pakistan", name: "Pakistan", code: "PAK", flag: "🇵🇰", color: "#166534" },
+  { id: "West Indies", name: "West Indies", code: "WI", flag: "🌴", color: "#7F1D1D" },
+  { id: "Sri Lanka", name: "Sri Lanka", code: "SL", flag: "🇱🇰", color: "#1D4ED8" },
+  { id: "Bangladesh", name: "Bangladesh", code: "BAN", flag: "🇧🇩", color: "#047857" },
+  { id: "Afghanistan", name: "Afghanistan", code: "AFG", flag: "🇦🇫", color: "#2563EB" }
+];
+
+const PLAYERS_DATABASE = {
+  "India": [
+    {
+      id: "player-virat-kohli",
+      name: "Virat Kohli",
+      country: "India",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 98,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ViratKohli&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 13906, avg: 58.2, sr: 93.5, centuries: 50 },
+      matchupScores: { paceHandling: 94, spinHandling: 93, bounceHandling: 95, deathExecution: 95 },
+      primaryStrength: "Supreme wrist-work, chases master, cover-drive perfection, elite physical running between wickets.",
+      vulnerability: "Early-innings susceptibility to 5th-stump outswing; high bowled percentage against reverse-swinging yorkers in death overs.",
+      theoryTips: {
+        trapName: "The 5th-Stump Nibble & Inswing Yorker Trap",
+        deliverySequence: "Bowl 2 consecutive outswingers in the 5th-stump channel (full-good length) enticing the drive away from body, then follow with a 140+ km/h inswinging yorker at base of off-stump.",
+        phaseVulnerability: "Balls 1–15: tentative footwork outside off stump. Death overs (Over 40+): average plummets to 12.0 when denied width.",
+        technicalFlaw: "Tends to push his hands at the ball without full forward stride when bowling tight 5th stump channel.",
+        fieldInstruction: "Set Fourth-Stump Catchers (3 Slips + Gully + deep cover boundary rider) during powerplay; Death Yorker Ring at death."
+      },
+      mlShapData: {
+        dismissalProb: 8.4,
+        expectedRuns: 1.1,
+        shapAttributions: [
+          { feature: "batsman_bowled_ratio", impact: "+0.038", desc: "34% of his outs are bowled (13% higher than baseline)" },
+          { feature: "chase_pressure_index", impact: "+0.026", desc: "Pressure index > 7.0 significantly increases dot-ball panic" },
+          { feature: "delivery_yorker_off", impact: "+0.019", desc: "Yorker on off-stump has lowest expected boundary rate (4.2%)" },
+          { feature: "ball_age_factor", impact: "-0.011", desc: "Older ball reverses more effectively into right-hander" }
+        ],
+        modelNotes: "LightGBM Binary Classifier (log-loss: 0.182), SHAP tree-attribution rank #1 for bowler speed > 138 km/h."
+      }
+    },
+    {
+      id: "player-rohit-sharma",
+      name: "Rohit Sharma",
+      country: "India",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 39,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RohitSharma&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 10866, avg: 49.2, sr: 92.4, centuries: 31 },
+      matchupScores: { paceHandling: 94, spinHandling: 94, bounceHandling: 91, deathExecution: 91 },
+      primaryStrength: "Effortless pull shot, dominant powerplay boundary striker, exceptional aerial timing over mid-wicket.",
+      vulnerability: "Left-arm pace incoming inswing at front pad in overs 1–5; mistimed pull against high bouncer.",
+      theoryTips: {
+        trapName: "Left-Arm Seam In-Ducker (LBW Trap)",
+        deliverySequence: "Deploy left-arm over-the-wicket pacer. Bowl full, angling in from wide of the crease, pitching on off-middle and jagging into front pad.",
+        phaseVulnerability: "Powerplay overs 1–4: Front pad plants across the line before head aligns with trajectory.",
+        technicalFlaw: "Slight delay in back-and-across trigger movement against steep incoming seam under 140 km/h.",
+        fieldInstruction: "Keep backward square leg and deep mid-wicket placed deep on the rope to dissuade the pull."
+      },
+      mlShapData: {
+        dismissalProb: 7.9,
+        expectedRuns: 1.3,
+        shapAttributions: [
+          { feature: "bowler_left_arm_pace", impact: "+0.042", desc: "Left-arm pace dismissal multiplier: 1.48x" },
+          { feature: "delivery_full_middle", impact: "+0.031", desc: "Full length targeting stumps has highest LBW conversion" },
+          { feature: "over_under_5", impact: "+0.018", desc: "Susceptibility highest before reaching 15 deliveries" }
+        ],
+        modelNotes: "TreeSHAP highlights 'bowler_arm_angle' as the single most decisive feature vector."
+      }
+    },
+    {
+      id: "player-jasprit-bumrah",
+      name: "Jasprit Bumrah",
+      country: "India",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 99,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=JaspritBumrah&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 149, avg: 23.5, econ: 4.59, fifers: 2 },
+      matchupScores: { paceHandling: 95, spinHandling: 96, bounceHandling: 94, deathExecution: 93 },
+      primaryStrength: "Hyperextension release, lethal pinpoint yorkers, deceptive slower balls (off-cutter), unplayable inswing and away-seam.",
+      vulnerability: "Tailender batsman; vulnerable to high climbing bouncers and full balls on off stump.",
+      theoryTips: {
+        trapName: "Aggressive Short-Ball Stomp",
+        deliverySequence: "Fast rising bouncer at rib cage followed by full delivery attacking top of off stump.",
+        phaseVulnerability: "All phases: low batting defensive confidence against express pace.",
+        technicalFlaw: "Backing away towards leg side to create swinging room.",
+        fieldInstruction: "Standard slip and short leg catching ring."
+      },
+      mlShapData: {
+        dismissalProb: 12.5,
+        expectedRuns: 0.6,
+        shapAttributions: [
+          { feature: "batsman_tailender_weight", impact: "+0.065", desc: "Tailender dismissal probability baseline +6.5%" },
+          { feature: "delivery_bouncer_head", impact: "+0.038", desc: "High bouncer causes fended catches" }
+        ],
+        modelNotes: "High confidence model prediction due to consistent tailender wicket cluster."
+      }
+    },
+    {
+      id: "player-shubman-gill",
+      name: "Shubman Gill",
+      country: "India",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 92,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShubmanGill&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2328, avg: 58.2, sr: 101.7, centuries: 6 },
+      matchupScores: { paceHandling: 90, spinHandling: 86, bounceHandling: 90, deathExecution: 86 },
+      primaryStrength: "Short-arm jab, pristine straight drive, high boundary rate in powerplay.",
+      vulnerability: "Inside edge onto stumps against full incoming balls; nip-backer off good length.",
+      theoryTips: {
+        trapName: "Good Length Nip-Backer Trap",
+        deliverySequence: "Target 6-7 meter good length on 4th stump line with inward seam movement to exploit gap between bat and pad.",
+        phaseVulnerability: "Overs 1–10: High drive commitment leaves stumps exposed.",
+        technicalFlaw: "Slightly expansive bat swing through the off side with head leaning back.",
+        fieldInstruction: "Mid-off and mid-on inside the circle; 2 slips and gully in place."
+      },
+      mlShapData: {
+        dismissalProb: 7.2,
+        expectedRuns: 1.2,
+        shapAttributions: [
+          { feature: "delivery_good_off", impact: "+0.029", desc: "Good length off-stump draws 22% edge/bowled outcome" },
+          { feature: "seam_movement_inward", impact: "+0.021", desc: "Inward deviation bypasses high backlift" }
+        ],
+        modelNotes: "Calibrated on 4,200 ODI deliveries."
+      }
+    },
+    {
+      id: "player-kl-rahul",
+      name: "KL Rahul",
+      country: "India",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KLRahul&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2851, avg: 49.1, sr: 87.8, centuries: 7 },
+      matchupScores: { paceHandling: 91, spinHandling: 88, bounceHandling: 87, deathExecution: 85 },
+      primaryStrength: "Classical technique, middle-overs anchor, sharp pick-up flick, reliable wicketkeeper.",
+      vulnerability: "Cautious starts; hesitant against fast short balls aimed at throat.",
+      theoryTips: {
+        trapName: "Throat-Line Squeeze & Off-Stump Dart",
+        deliverySequence: "Test with sharp bouncer into the chest, then wide full ball outside off stump to tempt tentative reach.",
+        phaseVulnerability: "Early middle overs: defensive dot-ball percentage rises under pressure.",
+        technicalFlaw: "Tentative push outside off when feet don't reach pitch of ball.",
+        fieldInstruction: "Point, backward point, and deep third man in position."
+      },
+      mlShapData: { dismissalProb: 6.8, expectedRuns: 1.3, shapAttributions: [{ feature: "bouncer_body_line", impact: "+0.024", desc: "Forces defensive pop-up" }], modelNotes: "Moderate sample size with steady middle overs calibration." }
+    },
+    {
+      id: "player-ravindra-jadeja",
+      name: "Ravindra Jadeja",
+      country: "India",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RavindraJadeja&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 2756, wickets: 220, bat_avg: 32.8, bowl_econ: 4.88 },
+      matchupScores: { paceHandling: 92, spinHandling: 88, bounceHandling: 92, deathExecution: 90 },
+      primaryStrength: "Lightning fielder at point/cover, rapid left-arm stump-to-stump accuracy, clutch lower-order finisher.",
+      vulnerability: "High bouncers angled across from right-arm over; wide yorkers outside off stump.",
+      theoryTips: {
+        trapName: "Wide Yorker & High Short Ball Trap",
+        deliverySequence: "Bowl wide yorker past off-stump tramline, then heavy short ball cramping left-hand stance.",
+        phaseVulnerability: "Death overs: forced to target mid-wicket boundary.",
+        technicalFlaw: "Prefers flat-bat swipe to mid-wicket; struggles when ball is dragged outside off.",
+        fieldInstruction: "Deep point, deep cover, and deep mid-wicket placed on the boundary."
+      },
+      mlShapData: { dismissalProb: 7.5, expectedRuns: 1.2, shapAttributions: [{ feature: "delivery_wide_yorker", impact: "+0.034", desc: "Denies power arc" }], modelNotes: "TreeSHAP shows high value for width." }
+    },
+    {
+      id: "player-mohammed-shami",
+      name: "Mohammed Shami",
+      country: "India",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 95,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MohammedShami&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 195, avg: 23.8, econ: 5.55, fifers: 5 },
+      matchupScores: { paceHandling: 94, spinHandling: 91, bounceHandling: 93, deathExecution: 88 },
+      primaryStrength: "Best upright seam presentation in modern cricket, relentless top of off-stump line, lethal reverse swing.",
+      vulnerability: "Lower-order slogger; vulnerable to full straight deliveries.",
+      theoryTips: {
+        trapName: "Straight Full Stump-Smasher",
+        deliverySequence: "Fire fast yorker targeting base of middle and leg stump.",
+        phaseVulnerability: "Late overs: swings across the line.",
+        technicalFlaw: "Clears front leg and exposes all three stumps.",
+        fieldInstruction: "Deep mid-wicket and long-on placed back."
+      },
+      mlShapData: { dismissalProb: 11.2, expectedRuns: 0.7, shapAttributions: [{ feature: "delivery_yorker_middle", impact: "+0.052", desc: "Bowled outcome 48%" }], modelNotes: "Tailender cluster classification." }
+    },
+    {
+      id: "player-hardik-pandya",
+      name: "Hardik Pandya",
+      country: "India",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=HardikPandya&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1769, wickets: 84, bat_avg: 34.0, bowl_econ: 5.52 },
+      matchupScores: { paceHandling: 87, spinHandling: 89, bounceHandling: 88, deathExecution: 85 },
+      primaryStrength: "Massive power down the ground, hard-length enforcer with the ball, clutch match-finishing.",
+      vulnerability: "Off-pace deliveries outside off stump; hard bouncers right at the helmet.",
+      theoryTips: {
+        trapName: "Wide Off-Cutter Squeeze",
+        deliverySequence: "Slower ball off-cutter pitched outside off stump, taking pace off the ball to force reach.",
+        phaseVulnerability: "Death overs: looking to clear long-off and long-on on every delivery.",
+        technicalFlaw: "Commits to front-foot launch before detecting variation in pace.",
+        fieldInstruction: "Long-off and long-on back on the ropes; deep extra cover in position."
+      },
+      mlShapData: { dismissalProb: 8.1, expectedRuns: 1.4, shapAttributions: [{ feature: "slower_ball_cutter", impact: "+0.039", desc: "Mistimed aerial hit" }], modelNotes: "Calibrated for death overs bowling." }
+    },
+    {
+      id: "player-shreyas-iyer",
+      name: "Shreyas Iyer",
+      country: "India",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShreyasIyer&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2421, avg: 47.5, sr: 100.8, centuries: 5 },
+      matchupScores: { paceHandling: 86, spinHandling: 83, bounceHandling: 88, deathExecution: 86 },
+      primaryStrength: "Brilliant destroyer of spin bowling, fluid lofted strokes over long-on, calm middle-overs builder.",
+      vulnerability: "Susceptible to direct, high-speed short balls directed at the body/head.",
+      theoryTips: {
+        trapName: "Bodyline Bouncer Ambush",
+        deliverySequence: "Fast, steep bouncer over 140 km/h aimed right at throat, followed by another sharp short delivery.",
+        phaseVulnerability: "Middle overs: visibly changes stance anticipating bouncers.",
+        technicalFlaw: "Gets into awkward positions fending short deliveries; bat face twists in hand.",
+        fieldInstruction: "Short leg, deep backward square leg, and deep fine leg all deployed."
+      },
+      mlShapData: { dismissalProb: 8.8, expectedRuns: 1.0, shapAttributions: [{ feature: "delivery_bouncer", impact: "+0.051", desc: "Primary weakness vector" }], modelNotes: "Highest bouncer dismissal index in squad." }
+    },
+    {
+      id: "player-mohammed-siraj",
+      name: "Mohammed Siraj",
+      country: "India",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MohammedSiraj&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 68, avg: 22.8, econ: 5.15, fifers: 1 },
+      matchupScores: { paceHandling: 86, spinHandling: 87, bounceHandling: 86, deathExecution: 84 },
+      primaryStrength: "Aggressive powerplay wobble-seam, fiery burst spells, lethal nip-backer to right handers.",
+      vulnerability: "Tailender; swings blindly at full balls.",
+      theoryTips: { trapName: "Full Off-Stump Castler", deliverySequence: "Full yorker at off-stump.", phaseVulnerability: "All phases.", technicalFlaw: "No defensive block.", fieldInstruction: "Catching ring." },
+      mlShapData: { dismissalProb: 13.0, expectedRuns: 0.5, shapAttributions: [{ feature: "full_stumps", impact: "+0.060", desc: "Instant bowled" }], modelNotes: "Standard lower order." }
+    },
+    {
+      id: "player-kuldeep-yadav",
+      name: "Kuldeep Yadav",
+      country: "India",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KuldeepYadav&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 172, avg: 26.0, econ: 5.03, fifers: 2 },
+      matchupScores: { paceHandling: 93, spinHandling: 89, bounceHandling: 91, deathExecution: 88 },
+      primaryStrength: "Left-arm wrist spin mystery, devastating wrong-un, drift and dip that deceives batsmen through the air.",
+      vulnerability: "Tailender; susceptible to bouncers and straight yorkers.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker at toes.", phaseVulnerability: "Tail.", technicalFlaw: "Back foot static.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Direct" }], modelNotes: "Low sample batting." }
+    },
+    {
+      id: "player-suryakumar-yadav",
+      name: "Suryakumar Yadav",
+      country: "India",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 92,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=SuryakumarYadav&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 773, avg: 25.8, sr: 105.0, centuries: 0 },
+      matchupScores: { paceHandling: 89, spinHandling: 90, bounceHandling: 90, deathExecution: 86 },
+      primaryStrength: "360-degree boundary hitting, scoop over fine leg, unreadable wrist manipulation.",
+      vulnerability: "Wide outside off-stump yorkers; back-of-a-length deliveries on 5th stump with pace.",
+      theoryTips: {
+        trapName: "Wide Yorker Tramline Trap",
+        deliverySequence: "Fire fast yorkers 6 inches inside the wide line past off stump, denying him access to scoop angles.",
+        phaseVulnerability: "Death overs: moves across stumps early.",
+        technicalFlaw: "Exposes leg-stump when pre-meditating the ramp over fine leg.",
+        fieldInstruction: "Deep third, deep point, and deep square leg back."
+      },
+      mlShapData: { dismissalProb: 7.6, expectedRuns: 1.4, shapAttributions: [{ feature: "wide_outside_off", impact: "+0.035", desc: "Neutralizes 360 scoop" }], modelNotes: "T20/ODI hybrid model." }
+    },
+    {
+      id: "player-axar-patel",
+      name: "Axar Patel",
+      country: "India",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AxarPatel&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 579, wickets: 64, bat_avg: 20.6, bowl_econ: 4.55 },
+      matchupScores: { paceHandling: 88, spinHandling: 86, bounceHandling: 84, deathExecution: 84 },
+      primaryStrength: "Tight flat darts, high economy rate, crisp straight six hitting.",
+      vulnerability: "Short balls rising at body; off-spin turning away from left-hander.",
+      theoryTips: { trapName: "Off-Spin Turn & Bouncer", deliverySequence: "Off-spin drifting in and spinning away.", phaseVulnerability: "Middle overs.", technicalFlaw: "Flats bat drive.", fieldInstruction: "Cover and long-off." },
+      mlShapData: { dismissalProb: 7.1, expectedRuns: 1.2, shapAttributions: [{ feature: "spin_away", impact: "+0.028", desc: "Outside edge" }], modelNotes: "Steady performer." }
+    },
+    {
+      id: "player-rishabh-pant",
+      name: "Rishabh Pant",
+      country: "India",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 28,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RishabhPant&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 865, avg: 34.6, sr: 106.6, centuries: 1 },
+      matchupScores: { paceHandling: 89, spinHandling: 87, bounceHandling: 91, deathExecution: 89 },
+      primaryStrength: "Unpredictable counter-attack, one-handed sixes over mid-wicket, fearless match-winner.",
+      vulnerability: "Wide swinging deliveries enticing the wild slice outside off stump.",
+      theoryTips: {
+        trapName: "The Wide Highway Slicer",
+        deliverySequence: "Keep ball well outside off stump on full length, taking pace off and daring the expansive slash.",
+        phaseVulnerability: "Early in innings: looks to hit boundaries immediately.",
+        technicalFlaw: "Over-rotates body, losing balance and slicing high into off-side ring.",
+        fieldInstruction: "Deep point, third man, and deep backward point ready for high skiers."
+      },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.3, shapAttributions: [{ feature: "wide_full_off", impact: "+0.041", desc: "Sliced catches" }], modelNotes: "High-variance profile." }
+    },
+    {
+      id: "player-arshdeep-singh",
+      name: "Arshdeep Singh",
+      country: "India",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 27,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ArshdeepSingh&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 14, avg: 22.1, econ: 4.85, fifers: 1 },
+      matchupScores: { paceHandling: 84, spinHandling: 83, bounceHandling: 83, deathExecution: 84 },
+      primaryStrength: "Left-arm swing in powerplay, clutch wide yorkers in death overs.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Full Inswinger", deliverySequence: "Full straight yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Close ring." },
+      mlShapData: { dismissalProb: 12.8, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.058", desc: "Bowled" }], modelNotes: "Tail cluster." }
+    }
+  ],
+
+  "Australia": [
+    {
+      id: "player-steve-smith",
+      name: "Steve Smith",
+      country: "Australia",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 97,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=SteveSmith&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 5446, avg: 43.9, sr: 87.4, centuries: 12 },
+      matchupScores: { paceHandling: 94, spinHandling: 92, bounceHandling: 93, deathExecution: 94 },
+      primaryStrength: "Unorthodox trigger shuffle, master of rotating strike to leg side, impenetrable concentration.",
+      vulnerability: "Full and straight in-ducking seam targeting the front pad before bat comes down.",
+      theoryTips: {
+        trapName: "The Front-Pad Shuffler LBW Trap",
+        deliverySequence: "Fast bowler bowling straight at middle and leg stump on full length to intercept his back-and-across shuffle before bat arrives.",
+        phaseVulnerability: "Overs 1–15: Walking across his stumps makes him vulnerable to rapid straight deliveries.",
+        technicalFlaw: "Exaggerated walk across towards off stump can trap his pad directly in front of all three stumps.",
+        fieldInstruction: "Leg gully, short mid-wicket, and fine leg close in; slip cordon alert for leading edges."
+      },
+      mlShapData: {
+        dismissalProb: 8.2,
+        expectedRuns: 1.1,
+        shapAttributions: [
+          { feature: "delivery_full_middle_leg", impact: "+0.044", desc: "41% of dismissals are LBW" },
+          { feature: "shuffle_trigger_index", impact: "+0.028", desc: "Crosses off-stump line early" },
+          { feature: "bowler_pace_above_140", impact: "+0.021", desc: "Reduces bat-down time" }
+        ],
+        modelNotes: "High statistical conviction on LBW modes."
+      }
+    },
+    {
+      id: "player-pat-cummins",
+      name: "Pat Cummins",
+      country: "Australia",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=PatCummins&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 141, avg: 28.1, econ: 5.22, fifers: 1 },
+      matchupScores: { paceHandling: 95, spinHandling: 92, bounceHandling: 91, deathExecution: 89 },
+      primaryStrength: "Relentless hard test-match length, seaming deliveries off the deck, fearless captaincy and lower-order hitting.",
+      vulnerability: "Can be edged off good length fourth stump; susceptible to sharp spin turning away.",
+      theoryTips: { trapName: "4th Stump Away-Nip", deliverySequence: "Good length pitching off and nipping away.", phaseVulnerability: "Middle overs.", technicalFlaw: "Pushes hands away.", fieldInstruction: "Slips and gully." },
+      mlShapData: { dismissalProb: 9.1, expectedRuns: 1.1, shapAttributions: [{ feature: "away_seam", impact: "+0.032", desc: "Thick edge" }], modelNotes: "Competent lower order batsman." }
+    },
+    {
+      id: "player-mitchell-starc",
+      name: "Mitchell Starc",
+      country: "Australia",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 95,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MitchellStarc&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 236, avg: 22.9, econ: 5.15, fifers: 9 },
+      matchupScores: { paceHandling: 95, spinHandling: 93, bounceHandling: 94, deathExecution: 92 },
+      primaryStrength: "Lethal 145+ km/h inswinging yorker with the new ball, devastating World Cup knockout wicket-taker.",
+      vulnerability: "Tailender; swings high across the line.",
+      theoryTips: { trapName: "Bouncer into Stumps", deliverySequence: "Short ball followed by yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Wild swing.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.8, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Out" }], modelNotes: "Tail cluster." }
+    },
+    {
+      id: "player-travis-head",
+      name: "Travis Head",
+      country: "Australia",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 95,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TravisHead&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2645, avg: 44.1, sr: 104.5, centuries: 6 },
+      matchupScores: { paceHandling: 92, spinHandling: 90, bounceHandling: 92, deathExecution: 90 },
+      primaryStrength: "Blistering intent, devastating off-side cut and slash, fearless striker against the new ball.",
+      vulnerability: "Tight line at body with steep bounce; off-spin pitching on off and turning away.",
+      theoryTips: {
+        trapName: "Body-Cramping Rib-Bouncer",
+        deliverySequence: "Fast bouncer directly at throat angling across him, followed by back-of-a-length ball in his armpit.",
+        phaseVulnerability: "Powerplay overs 1–6: Swings aggressively regardless of movement.",
+        technicalFlaw: "Throws hands through ball away from body; leaves gap between chest and bat.",
+        fieldInstruction: "Deep third man, deep backward point, and deep square leg back immediately."
+      },
+      mlShapData: { dismissalProb: 8.5, expectedRuns: 1.5, shapAttributions: [{ feature: "steep_bounce_body", impact: "+0.048", desc: "Forces mistimed slash" }], modelNotes: "High boundary rate offset by edge probability." }
+    },
+    {
+      id: "player-glenn-maxwell",
+      name: "Glenn Maxwell",
+      country: "Australia",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=GlennMaxwell&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 3895, wickets: 70, bat_avg: 35.4, bowl_econ: 5.46 },
+      matchupScores: { paceHandling: 90, spinHandling: 90, bounceHandling: 91, deathExecution: 90 },
+      primaryStrength: "Unmatched reverse sweep power, highest strike rate in World Cup history, livewire boundary catcher.",
+      vulnerability: "Fast straight yorkers hitting the base of stumps while pre-meditating reverse sweeps.",
+      theoryTips: {
+        trapName: "The Straight Fast Stumps-Arrow",
+        deliverySequence: "Do not bowl outside off. Fire 142+ km/h straight yorker at base of middle/leg stump as he switches grip.",
+        phaseVulnerability: "Death overs: looks to manufacture boundaries on every ball.",
+        technicalFlaw: "Pre-meditates reverse sweep and leaves off stump completely unprotected.",
+        fieldInstruction: "Deep point, deep mid-wicket, and long-on on the boundary rope."
+      },
+      mlShapData: { dismissalProb: 8.9, expectedRuns: 1.5, shapAttributions: [{ feature: "stump_line_yorker", impact: "+0.045", desc: "Bowled during reverse lap" }], modelNotes: "High strike rate model." }
+    },
+    {
+      id: "player-david-warner",
+      name: "David Warner",
+      country: "Australia",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 39,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DavidWarner&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 6932, avg: 45.3, sr: 97.3, centuries: 22 },
+      matchupScores: { paceHandling: 90, spinHandling: 90, bounceHandling: 90, deathExecution: 89 },
+      primaryStrength: "Aggressive powerplay assault, relentless running between wickets, powerful square cut and pull.",
+      vulnerability: "Right-arm over pace angling around the wicket nipping away off good length.",
+      theoryTips: { trapName: "Round-the-Wicket Angler", deliverySequence: "Angle across from round the wicket, seam away on 5th stump.", phaseVulnerability: "Powerplay.", technicalFlaw: "Chases away from body.", fieldInstruction: "2 slips and gully." },
+      mlShapData: { dismissalProb: 7.7, expectedRuns: 1.3, shapAttributions: [{ feature: "round_wicket_angle", impact: "+0.038", desc: "Outside edge" }], modelNotes: "Classic left-hander vulnerability." }
+    },
+    {
+      id: "player-josh-hazlewood",
+      name: "Josh Hazlewood",
+      country: "Australia",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=JoshHazlewood&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 131, avg: 26.2, econ: 4.62, fifers: 3 },
+      matchupScores: { paceHandling: 90, spinHandling: 89, bounceHandling: 91, deathExecution: 89 },
+      primaryStrength: "Metronomic accuracy on top of off stump, McGrath-like discipline, stifling economy.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Full Straight", deliverySequence: "Straight yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Static feet.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-marnus-labuschagne",
+      name: "Marnus Labuschagne",
+      country: "Australia",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MarnusLabuschagne&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1656, avg: 37.6, sr: 83.2, centuries: 2 },
+      matchupScores: { paceHandling: 87, spinHandling: 88, bounceHandling: 86, deathExecution: 83 },
+      primaryStrength: "Relentless energy, superb strike rotation in middle overs, gritty defense under pressure.",
+      vulnerability: "Full outswingers enticing drive; spin turning into pads.",
+      theoryTips: { trapName: "Channel Outswinger", deliverySequence: "4th stump outswing to slip.", phaseVulnerability: "Middle overs.", technicalFlaw: "Hangs back.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 6.9, expectedRuns: 1.1, shapAttributions: [{ feature: "outswing", impact: "+0.029", desc: "Edge" }], modelNotes: "Steady accumulator." }
+    },
+    {
+      id: "player-mitchell-marsh",
+      name: "Mitchell Marsh",
+      country: "Australia",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MitchellMarsh&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 2672, wickets: 56, bat_avg: 35.6, bowl_econ: 5.48 },
+      matchupScores: { paceHandling: 87, spinHandling: 87, bounceHandling: 89, deathExecution: 84 },
+      primaryStrength: "Brutal boundary power against pace, commanding pull shot, high strike rate.",
+      vulnerability: "Early-innings seam movement off good length; tight off-spin targeting pads.",
+      theoryTips: { trapName: "Full Seam Nip-Backer", deliverySequence: "Full seam nipping back between bat and pad.", phaseVulnerability: "Overs 1–10.", technicalFlaw: "Large front foot stride.", fieldInstruction: "Mid-on and mid-off up." },
+      mlShapData: { dismissalProb: 7.8, expectedRuns: 1.4, shapAttributions: [{ feature: "in_seam", impact: "+0.036", desc: "Bowled through gate" }], modelNotes: "Aggressive profile." }
+    },
+    {
+      id: "player-adam-zampa",
+      name: "Adam Zampa",
+      country: "Australia",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AdamZampa&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 169, avg: 27.9, econ: 5.5, fifers: 1 },
+      matchupScores: { paceHandling: 92, spinHandling: 89, bounceHandling: 88, deathExecution: 86 },
+      primaryStrength: "Elite middle-overs wicket-taker, sliding flipper, fast leg-break with sharp bounce.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.8, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Out" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-alex-carey",
+      name: "Alex Carey",
+      country: "Australia",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AlexCarey&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1814, avg: 33.6, sr: 88.5, centuries: 1 },
+      matchupScores: { paceHandling: 86, spinHandling: 84, bounceHandling: 87, deathExecution: 82 },
+      primaryStrength: "Expert sweep and reverse sweep, calm lower-order stabilizer.",
+      vulnerability: "Sharp off-spin pitching on middle and spinning past outside edge.",
+      theoryTips: { trapName: "Off-Spin Turning Away", deliverySequence: "Drift into pads, turn sharply away to draw edge.", phaseVulnerability: "Middle overs.", technicalFlaw: "Reaches for sweep.", fieldInstruction: "Slip and deep cover." },
+      mlShapData: { dismissalProb: 7.2, expectedRuns: 1.2, shapAttributions: [{ feature: "spin_away", impact: "+0.031", desc: "Top edge" }], modelNotes: "Sweep vulnerability." }
+    },
+    {
+      id: "player-marcus-stoinis",
+      name: "Marcus Stoinis",
+      country: "Australia",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 87,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MarcusStoinis&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1400, wickets: 48, bat_avg: 27.4, bowl_econ: 5.86 },
+      matchupScores: { paceHandling: 85, spinHandling: 84, bounceHandling: 84, deathExecution: 81 },
+      primaryStrength: "Huge physical muscle, cleans out long-on boundary, deceptive cutters with the ball.",
+      vulnerability: "High bouncers at helmet; wide yorkers denying room to extend arms.",
+      theoryTips: { trapName: "Throat Bouncer", deliverySequence: "Fast bouncer directed at chest.", phaseVulnerability: "Death overs.", technicalFlaw: "Pulls with flat feet.", fieldInstruction: "Deep mid-wicket." },
+      mlShapData: { dismissalProb: 8.0, expectedRuns: 1.3, shapAttributions: [{ feature: "bouncer", impact: "+0.035", desc: "Fended catch" }], modelNotes: "Power hitter." }
+    },
+    {
+      id: "player-cameron-green",
+      name: "Cameron Green",
+      country: "Australia",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 27,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=CameronGreen&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 475, wickets: 18, bat_avg: 36.5, bowl_econ: 5.18 },
+      matchupScores: { paceHandling: 89, spinHandling: 87, bounceHandling: 85, deathExecution: 83 },
+      primaryStrength: "Towering reach, high release bounce, commanding straight drives.",
+      vulnerability: "Full inswing at front toes; short ball into hip.",
+      theoryTips: { trapName: "Toe-Crusher Inswinger", deliverySequence: "Full fast inswing under his high backlift.", phaseVulnerability: "Early in innings.", technicalFlaw: "High backlift makes bat late to ground.", fieldInstruction: "Bowled/LBW ring." },
+      mlShapData: { dismissalProb: 7.5, expectedRuns: 1.2, shapAttributions: [{ feature: "inswing_yorker", impact: "+0.038", desc: "Late bat down" }], modelNotes: "High reach adjustments." }
+    },
+    {
+      id: "player-josh-inglis",
+      name: "Josh Inglis",
+      country: "Australia",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 87,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=JoshInglis&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 512, avg: 28.4, sr: 94.8, centuries: 0 },
+      matchupScores: { paceHandling: 85, spinHandling: 82, bounceHandling: 83, deathExecution: 81 },
+      primaryStrength: "360-degree innovation, fearless ramp strokes, fast hands against spin.",
+      vulnerability: "Fast rising bouncer outside off stump.",
+      theoryTips: { trapName: "Wide High Bouncer", deliverySequence: "Short ball outside off taking pace away.", phaseVulnerability: "Middle overs.", technicalFlaw: "Pre-meditates scoop.", fieldInstruction: "Deep third and deep fine leg." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.3, shapAttributions: [{ feature: "short_wide", impact: "+0.033", desc: "Mistimed ramp" }], modelNotes: "Aggressive striker." }
+    },
+    {
+      id: "player-sean-abbott",
+      name: "Sean Abbott",
+      country: "Australia",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=SeanAbbott&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 32, avg: 33.2, econ: 5.42, fifers: 0 },
+      matchupScores: { paceHandling: 83, spinHandling: 83, bounceHandling: 83, deathExecution: 83 },
+      primaryStrength: "Wicket-taking bouncers, reliable death-overs yorkers, handy lower-order striking.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker on off stump.", phaseVulnerability: "Tail.", technicalFlaw: "Exposes stumps.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 10.5, expectedRuns: 0.9, shapAttributions: [{ feature: "yorker", impact: "+0.042", desc: "Bowled" }], modelNotes: "Tail." }
+    }
+  ],
+
+  "England": [
+    {
+      id: "player-joe-root",
+      name: "Joe Root",
+      country: "England",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=JoeRoot&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 6523, avg: 47.6, sr: 86.8, centuries: 16 },
+      matchupScores: { paceHandling: 94, spinHandling: 90, bounceHandling: 92, deathExecution: 90 },
+      primaryStrength: "Supreme back-foot play, flawless strike rotation, master sweep against spin, calm anchor.",
+      vulnerability: "Full swinging deliveries outside off tempting the back-foot push; sharp in-seam off good length.",
+      theoryTips: {
+        trapName: "Fourth-Stump Seam Away-Nip Trap",
+        deliverySequence: "Bowl on good length 4th stump line nipping away with upright seam, forcing him to push from the crease.",
+        phaseVulnerability: "Overs 1–15: Playing off back foot early makes him vulnerable to balls seaming away.",
+        technicalFlaw: "Dabs with open face close to his body, creating thin outside edge to keeper/slip.",
+        fieldInstruction: "Set Fourth-Stump Catchers: 2 slips, gully, and backward point."
+      },
+      mlShapData: { dismissalProb: 7.8, expectedRuns: 1.1, shapAttributions: [{ feature: "away_seam_good_length", impact: "+0.038", desc: "Thick edge to slip/keeper" }], modelNotes: "Calibrated on 6,000+ international deliveries." }
+    },
+    {
+      id: "player-jos-buttler",
+      name: "Jos Buttler",
+      country: "England",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 95,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=JosButtler&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 5022, avg: 39.5, sr: 117.1, centuries: 11 },
+      matchupScores: { paceHandling: 92, spinHandling: 89, bounceHandling: 92, deathExecution: 88 },
+      primaryStrength: "Devastating 360-degree power, ramp stroke mastery, lethal finisher, brilliant wicketkeeper.",
+      vulnerability: "Hard length right at his ribs; sharp off-cutter outside off.",
+      theoryTips: {
+        trapName: "Body-Line Rib Cramper & Deep Square Trap",
+        deliverySequence: "Fast rising delivery at his ribs with fine leg and deep square leg back; deny any room for arms.",
+        phaseVulnerability: "Death overs: looks to clear leg-side on every delivery.",
+        technicalFlaw: "Backs away to leg side to create swinging arc, leaving stumps exposed to straight yorker.",
+        fieldInstruction: "Death Yorker Ring with boundary riders at square leg and long-off."
+      },
+      mlShapData: { dismissalProb: 8.3, expectedRuns: 1.4, shapAttributions: [{ feature: "rib_height_bouncer", impact: "+0.044", desc: "Pops up to leg side" }], modelNotes: "High strike-rate danger model." }
+    },
+    {
+      id: "player-ben-stokes",
+      name: "Ben Stokes",
+      country: "England",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=BenStokes&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 3159, wickets: 74, bat_avg: 39.5, bowl_econ: 6.02 },
+      matchupScores: { paceHandling: 93, spinHandling: 92, bounceHandling: 93, deathExecution: 89 },
+      primaryStrength: "Clutch supernatural match-winner, superhuman competitive courage, reverse sweep and lofted power.",
+      vulnerability: "Full straight deliveries targeting his front pad; fast off-spin turning away.",
+      theoryTips: { trapName: "Inswinging Yorker at Toes", deliverySequence: "Fast full yorker targeting his front boot.", phaseVulnerability: "Early in innings.", technicalFlaw: "Planted front foot.", fieldInstruction: "Straight field." },
+      mlShapData: { dismissalProb: 8.0, expectedRuns: 1.2, shapAttributions: [{ feature: "toe_yorker", impact: "+0.041", desc: "LBW or bowled" }], modelNotes: "Big match calibration." }
+    },
+    {
+      id: "player-harry-brook",
+      name: "Harry Brook",
+      country: "England",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 27,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=HarryBrook&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 712, avg: 39.5, sr: 98.4, centuries: 1 },
+      matchupScores: { paceHandling: 88, spinHandling: 86, bounceHandling: 86, deathExecution: 87 },
+      primaryStrength: "Explosive intent, powerful back-foot punch, fearless lofted drives over extra cover.",
+      vulnerability: "Sharp bouncer directed at helmet; high-speed inswinger targeting stumps.",
+      theoryTips: { trapName: "Bouncer at Throat", deliverySequence: "Bouncer followed by full yorker.", phaseVulnerability: "Middle overs.", technicalFlaw: "Swings hard without reset.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.4, shapAttributions: [{ feature: "bouncer", impact: "+0.036", desc: "Aerial catch" }], modelNotes: "Rapid ascent profile." }
+    },
+    {
+      id: "player-jofra-archer",
+      name: "Jofra Archer",
+      country: "England",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=JofraArcher&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 42, avg: 24.1, econ: 4.74, fifers: 1 },
+      matchupScores: { paceHandling: 90, spinHandling: 92, bounceHandling: 93, deathExecution: 87 },
+      primaryStrength: "Effortless 150 km/h whip release, unplayable steep bounce off good length, clutch Super Over ice.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Full straight yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Exposes stumps.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.7, shapAttributions: [{ feature: "yorker", impact: "+0.049", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-mark-wood",
+      name: "Mark Wood",
+      country: "England",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 92,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MarkWood&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 77, avg: 38.0, econ: 5.5, fifers: 0 },
+      matchupScores: { paceHandling: 91, spinHandling: 86, bounceHandling: 88, deathExecution: 86 },
+      primaryStrength: "Pure express 154 km/h hostility, skiddy bouncers that rush batsmen.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Full Yorker", deliverySequence: "Fast yorker at off-stump.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.2, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.052", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-adil-rashid",
+      name: "Adil Rashid",
+      country: "England",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 38,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AdilRashid&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 199, avg: 32.4, econ: 5.67, fifers: 2 },
+      matchupScores: { paceHandling: 89, spinHandling: 87, bounceHandling: 92, deathExecution: 89 },
+      primaryStrength: "World's most deceptive googly, big leg-break turn, reliable middle-overs wicket taker.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Bouncer", deliverySequence: "Sharp bouncer.", phaseVulnerability: "Tail.", technicalFlaw: "Backs away.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 10.8, expectedRuns: 0.7, shapAttributions: [{ feature: "bouncer", impact: "+0.04", desc: "Catch" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-jonny-bairstow",
+      name: "Jonny Bairstow",
+      country: "England",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=JonnyBairstow&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 3868, avg: 42.0, sr: 103.2, centuries: 11 },
+      matchupScores: { paceHandling: 90, spinHandling: 87, bounceHandling: 85, deathExecution: 83 },
+      primaryStrength: "Brutal boundary hitting against pace in powerplay, powerful bat swing.",
+      vulnerability: "Bowled through the gate by incoming seam on full length.",
+      theoryTips: { trapName: "Full In-Nipping Gate Smasher", deliverySequence: "Full length nipping inward through gap between bat and pad.", phaseVulnerability: "Overs 1–6.", technicalFlaw: "Wide stance leaves gap.", fieldInstruction: "Mid-on and mid-off up." },
+      mlShapData: { dismissalProb: 8.4, expectedRuns: 1.3, shapAttributions: [{ feature: "in_seam_full", impact: "+0.042", desc: "Bowled through gate" }], modelNotes: "Frequent bowled mode." }
+    },
+    {
+      id: "player-liam-livingstone",
+      name: "Liam Livingstone",
+      country: "England",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=LiamLivingstone&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 845, wickets: 18, bat_avg: 31.2, bowl_econ: 5.48 },
+      matchupScores: { paceHandling: 88, spinHandling: 84, bounceHandling: 88, deathExecution: 82 },
+      primaryStrength: "Monster six-hitting power (120m+), bowls both off-spin and leg-spin.",
+      vulnerability: "Fast bouncers right at the eyes; wide yorkers denying leverage.",
+      theoryTips: { trapName: "Wide Yorker Lever-Stopper", deliverySequence: "Wide yorker outside off, take away front-leg leverage.", phaseVulnerability: "Death overs.", technicalFlaw: "Swings with full bottom hand.", fieldInstruction: "Deep extra cover." },
+      mlShapData: { dismissalProb: 8.1, expectedRuns: 1.4, shapAttributions: [{ feature: "wide_yorker", impact: "+0.037", desc: "Sliced" }], modelNotes: "Power hitter." }
+    },
+    {
+      id: "player-chris-woakes",
+      name: "Chris Woakes",
+      country: "England",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ChrisWoakes&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1512, wickets: 173, bat_avg: 24.0, bowl_econ: 5.45 },
+      matchupScores: { paceHandling: 88, spinHandling: 87, bounceHandling: 87, deathExecution: 86 },
+      primaryStrength: "Pristine outswing with new ball in English conditions, high-class lower-order batsman.",
+      vulnerability: "Short deliveries with steep bounce.",
+      theoryTips: { trapName: "Steep Bouncer", deliverySequence: "Sharp bouncer at body.", phaseVulnerability: "Late middle overs.", technicalFlaw: "Fends awkwardly.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.033", desc: "Fended" }], modelNotes: "Solid." }
+    },
+    {
+      id: "player-moeen-ali",
+      name: "Moeen Ali",
+      country: "England",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 39,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MoeenAli&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 2355, wickets: 111, bat_avg: 25.0, bowl_econ: 5.3 },
+      matchupScores: { paceHandling: 85, spinHandling: 86, bounceHandling: 86, deathExecution: 81 },
+      primaryStrength: "Elegant cover drives, rapid off-spin over completion, attacking middle-order batsman.",
+      vulnerability: "Fast rising bouncer targeting his helmet.",
+      theoryTips: { trapName: "Short Ball Barrage", deliverySequence: "Bouncer into throat.", phaseVulnerability: "Middle overs.", technicalFlaw: "Lifts head on pull.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.2, shapAttributions: [{ feature: "bouncer", impact: "+0.043", desc: "Top edge" }], modelNotes: "Bouncer weakness." }
+    },
+    {
+      id: "player-sam-curran",
+      name: "Sam Curran",
+      country: "England",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 87,
+      age: 28,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=SamCurran&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 383, wickets: 33, bat_avg: 23.9, bowl_econ: 5.92 },
+      matchupScores: { paceHandling: 85, spinHandling: 83, bounceHandling: 86, deathExecution: 84 },
+      primaryStrength: "Left-arm back-of-the-hand slower balls, clutch death overs bowler, fighting batsman.",
+      vulnerability: "High bouncers and fast yorkers on off stump.",
+      theoryTips: { trapName: "Fast Inswing Yorker", deliverySequence: "Yorker at base of off stump.", phaseVulnerability: "Death.", technicalFlaw: "Exposes stumps.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 8.5, expectedRuns: 1.1, shapAttributions: [{ feature: "yorker", impact: "+0.039", desc: "Bowled" }], modelNotes: "All-rounder." }
+    },
+    {
+      id: "player-reece-topley",
+      name: "Reece Topley",
+      country: "England",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ReeceTopley&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 46, avg: 26.2, econ: 5.25, fifers: 1 },
+      matchupScores: { paceHandling: 86, spinHandling: 82, bounceHandling: 84, deathExecution: 83 },
+      primaryStrength: "Massive 6ft 7in left-arm bounce, angles across right handers.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.5, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.055", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-ben-duckett",
+      name: "Ben Duckett",
+      country: "England",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=BenDuckett&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 412, avg: 37.4, sr: 96.5, centuries: 1 },
+      matchupScores: { paceHandling: 86, spinHandling: 84, bounceHandling: 87, deathExecution: 81 },
+      primaryStrength: "Elite sweep and reverse sweep, punches through backward point with blistering hand speed.",
+      vulnerability: "Fast bouncer climbing over his shoulder; wide off-spin turning away.",
+      theoryTips: { trapName: "High Bouncer & Outside Edge Dart", deliverySequence: "Bouncer at left ear, followed by full ball turning away outside off.", phaseVulnerability: "Powerplay.", technicalFlaw: "Prefers horizontal bat shots.", fieldInstruction: "Gully and deep point." },
+      mlShapData: { dismissalProb: 7.7, expectedRuns: 1.3, shapAttributions: [{ feature: "spin_away", impact: "+0.035", desc: "Cut edge" }], modelNotes: "Fast scorer." }
+    },
+    {
+      id: "player-phil-salt",
+      name: "Phil Salt",
+      country: "England",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 30,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=PhilSalt&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 660, avg: 33.0, sr: 119.0, centuries: 1 },
+      matchupScores: { paceHandling: 86, spinHandling: 85, bounceHandling: 88, deathExecution: 85 },
+      primaryStrength: "Fearsome powerplay boundary hunter, high backlift aggression.",
+      vulnerability: "Nip-backer onto stumps early; outswing enticing reckless drive.",
+      theoryTips: { trapName: "Outswinger on 5th Stump", deliverySequence: "Good length swinging away on 5th stump.", phaseVulnerability: "Overs 1–4.", technicalFlaw: "Swings blindly through off side.", fieldInstruction: "2 slips and gully." },
+      mlShapData: { dismissalProb: 8.6, expectedRuns: 1.4, shapAttributions: [{ feature: "outswing", impact: "+0.044", desc: "Thick edge" }], modelNotes: "High risk profile." }
+    }
+  ],
+
+  "South Africa": [
+    {
+      id: "player-heinrich-klaasen",
+      name: "Heinrich Klaasen",
+      country: "South Africa",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=HeinrichKlaasen&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1723, avg: 42.0, sr: 114.8, centuries: 4 },
+      matchupScores: { paceHandling: 96, spinHandling: 92, bounceHandling: 93, deathExecution: 89 },
+      primaryStrength: "World's most destructive spin destroyer, ungodly back-foot power over cover and mid-wicket.",
+      vulnerability: "Fast express 145+ km/h rising bouncers at the badge of the helmet; wide toe-crusher yorkers.",
+      theoryTips: {
+        trapName: "Express Bodyline Bouncer & Wide Yorker",
+        deliverySequence: "Do NOT bowl spin. Use 145+ km/h pace, bowl high bouncer into helmet line, followed by wide yorker outside off.",
+        phaseVulnerability: "Middle overs: looks to launch spin into stands every over.",
+        technicalFlaw: "Sets deep in crease against spin; vulnerable when express pace rushes his hands.",
+        fieldInstruction: "Deep mid-wicket, long-on, and deep extra cover back on the fence."
+      },
+      mlShapData: { dismissalProb: 8.1, expectedRuns: 1.4, shapAttributions: [{ feature: "express_pace_bouncer", impact: "+0.046", desc: "Rushes back-foot stroke" }], modelNotes: "Highest spin strike rate in world." }
+    },
+    {
+      id: "player-quinton-de-kock",
+      name: "Quinton de Kock",
+      country: "South Africa",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 95,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=QuintondeKock&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 6770, avg: 45.7, sr: 96.6, centuries: 21 },
+      matchupScores: { paceHandling: 92, spinHandling: 90, bounceHandling: 93, deathExecution: 90 },
+      primaryStrength: "Devastating pick-up pull shot, crisp cover drive, world-class glovework.",
+      vulnerability: "Off-spin bowling in powerplay angled across him; good length away-seam.",
+      theoryTips: { trapName: "Off-Spin Powerplay Choke", deliverySequence: "Bowl off-spin targeting off-stump turning away from left-hander.", phaseVulnerability: "Powerplay overs 1–6.", technicalFlaw: "Chases away from body early.", fieldInstruction: "Slip and backward point." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.3, shapAttributions: [{ feature: "off_spin_powerplay", impact: "+0.041", desc: "Top edge" }], modelNotes: "Class left-hander." }
+    },
+    {
+      id: "player-kagiso-rabada",
+      name: "Kagiso Rabada",
+      country: "South Africa",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KagisoRabada&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 157, avg: 27.7, econ: 5.05, fifers: 2 },
+      matchupScores: { paceHandling: 93, spinHandling: 90, bounceHandling: 95, deathExecution: 89 },
+      primaryStrength: "Fiery 148 km/h pace, lethal outswinger, supreme death overs execution.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker at off stump.", phaseVulnerability: "Tail.", technicalFlaw: "Wild swing.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.2, expectedRuns: 0.7, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-aiden-markram",
+      name: "Aiden Markram",
+      country: "South Africa",
+      role: "Middle-Order Batsman",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AidenMarkram&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 2185, wickets: 20, bat_avg: 37.0, bowl_econ: 5.64 },
+      matchupScores: { paceHandling: 91, spinHandling: 91, bounceHandling: 90, deathExecution: 90 },
+      primaryStrength: "Classical elegant drives, handy off-spin, mature tactician.",
+      vulnerability: "In-ducking seam delivery targeting front pad early; sharp bouncers.",
+      theoryTips: { trapName: "Full Inswing LBW", deliverySequence: "Full length swinging in to hit front pad.", phaseVulnerability: "Overs 1–10.", technicalFlaw: "Planting front leg across line.", fieldInstruction: "Mid-on and mid-off up." },
+      mlShapData: { dismissalProb: 7.4, expectedRuns: 1.2, shapAttributions: [{ feature: "inswing_lbw", impact: "+0.035", desc: "LBW" }], modelNotes: "Solid anchor." }
+    },
+    {
+      id: "player-david-miller",
+      name: "David Miller",
+      country: "South Africa",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 92,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DavidMiller&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 4458, avg: 42.8, sr: 103.3, centuries: 6 },
+      matchupScores: { paceHandling: 89, spinHandling: 89, bounceHandling: 89, deathExecution: 86 },
+      primaryStrength: "Legendary death overs killer ('Miller Time'), colossal power hitting to straight boundaries.",
+      vulnerability: "Wide outside off-stump yorkers; fast bouncers directed into his left shoulder.",
+      theoryTips: { trapName: "Wide Yorker Highway", deliverySequence: "Fire yorkers wide outside off-stump tramline.", phaseVulnerability: "Overs 45–50.", technicalFlaw: "Relies on full swing arc; loses power when stretched wide.", fieldInstruction: "Deep point, deep cover, and long-off." },
+      mlShapData: { dismissalProb: 8.0, expectedRuns: 1.4, shapAttributions: [{ feature: "wide_yorker", impact: "+0.039", desc: "Denied leverage" }], modelNotes: "Death overs specialist." }
+    },
+    {
+      id: "player-marco-jansen",
+      name: "Marco Jansen",
+      country: "South Africa",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MarcoJansen&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 410, wickets: 35, bat_avg: 31.5, bowl_econ: 6.1 },
+      matchupScores: { paceHandling: 87, spinHandling: 86, bounceHandling: 89, deathExecution: 84 },
+      primaryStrength: "6ft 8in left-arm steep bounce, lethal powerplay wicket taker, monster lower-order six hitting.",
+      vulnerability: "Full straight yorkers.",
+      theoryTips: { trapName: "Yorker at Boots", deliverySequence: "Full yorker under towering reach.", phaseVulnerability: "Death.", technicalFlaw: "Late bat down.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 9.5, expectedRuns: 1.1, shapAttributions: [{ feature: "yorker", impact: "+0.044", desc: "Bowled" }], modelNotes: "High release angle." }
+    },
+    {
+      id: "player-keshav-maharaj",
+      name: "Keshav Maharaj",
+      country: "South Africa",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 92,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KeshavMaharaj&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 55, avg: 31.4, econ: 4.68, fifers: 0 },
+      matchupScores: { paceHandling: 88, spinHandling: 87, bounceHandling: 91, deathExecution: 88 },
+      primaryStrength: "World-class accuracy, stifling run-rate squeeze, drift into right-hander.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker on stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.0, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.046", desc: "Out" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-gerald-coetzee",
+      name: "Gerald Coetzee",
+      country: "South Africa",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=GeraldCoetzee&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 31, avg: 23.2, econ: 6.24, fifers: 0 },
+      matchupScores: { paceHandling: 88, spinHandling: 86, bounceHandling: 84, deathExecution: 86 },
+      primaryStrength: "Fiery 148 km/h middle overs enforcer, fierce aggression, aggressive lower-order swinger.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Bouncer into Stumps", deliverySequence: "Short ball then yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Wild swing.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.7, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-temba-bavuma",
+      name: "Temba Bavuma",
+      country: "South Africa",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 87,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TembaBavuma&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1563, avg: 44.6, sr: 89.2, centuries: 5 },
+      matchupScores: { paceHandling: 83, spinHandling: 82, bounceHandling: 83, deathExecution: 80 },
+      primaryStrength: "Tenacious defense, excellent running between wickets, strong square cut.",
+      vulnerability: "Fast rising deliveries on off stump; moving outswing.",
+      theoryTips: { trapName: "Channel Outswing", deliverySequence: "5th stump outswing.", phaseVulnerability: "Powerplay.", technicalFlaw: "Nicks to keeper.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.3, expectedRuns: 1.1, shapAttributions: [{ feature: "outswing", impact: "+0.033", desc: "Edge" }], modelNotes: "Anchor." }
+    },
+    {
+      id: "player-rassie-van-der-dussen",
+      name: "Rassie van der Dussen",
+      country: "South Africa",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RassievanderDussen&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2325, avg: 52.8, sr: 88.6, centuries: 6 },
+      matchupScores: { paceHandling: 87, spinHandling: 88, bounceHandling: 86, deathExecution: 84 },
+      primaryStrength: "Tremendous ODI average (55+), composed under pressure, strong reverse sweeps.",
+      vulnerability: "Full straight pace deliveries targeting pads; sharp leg-spin.",
+      theoryTips: { trapName: "Straight Full Seam", deliverySequence: "Full seam targeting stumps.", phaseVulnerability: "Middle overs.", technicalFlaw: "Exposed stumps.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 7.1, expectedRuns: 1.1, shapAttributions: [{ feature: "full_stumps", impact: "+0.031", desc: "LBW" }], modelNotes: "High average." }
+    },
+    {
+      id: "player-lungi-ngidi",
+      name: "Lungi Ngidi",
+      country: "South Africa",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 30,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=LungiNgidi&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 88, avg: 27.8, econ: 5.68, fifers: 1 },
+      matchupScores: { paceHandling: 85, spinHandling: 84, bounceHandling: 86, deathExecution: 84 },
+      primaryStrength: "Heavy ball hit the deck pace, sharp slower balls.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-tabraiz-shamsi",
+      name: "Tabraiz Shamsi",
+      country: "South Africa",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TabraizShamsi&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 72, avg: 32.5, econ: 5.52, fifers: 1 },
+      matchupScores: { paceHandling: 87, spinHandling: 83, bounceHandling: 85, deathExecution: 81 },
+      primaryStrength: "Left-arm wrist spin chinaman, big-turning wrong-un, animated celebrations.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "Static feet.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.5, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Out" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-anrich-nortje",
+      name: "Anrich Nortje",
+      country: "South Africa",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AnrichNortje&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 36, avg: 27.2, econ: 5.85, fifers: 0 },
+      matchupScores: { paceHandling: 88, spinHandling: 88, bounceHandling: 86, deathExecution: 85 },
+      primaryStrength: "Raw 152 km/h express speed, shattering stump impact.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker on middle.", phaseVulnerability: "Tail.", technicalFlaw: "Wild swing.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.8, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-reeza-hendricks",
+      name: "Reeza Hendricks",
+      country: "South Africa",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 87,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ReezaHendricks&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1174, avg: 31.7, sr: 81.5, centuries: 1 },
+      matchupScores: { paceHandling: 87, spinHandling: 85, bounceHandling: 86, deathExecution: 84 },
+      primaryStrength: "Classical high elbow punch, fluent powerplay boundary scoring.",
+      vulnerability: "Inswing onto front pad early; outswing outside off.",
+      theoryTips: { trapName: "Nip-Backer", deliverySequence: "Good length nipping in.", phaseVulnerability: "Powerplay.", technicalFlaw: "Late footwork.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.8, expectedRuns: 1.2, shapAttributions: [{ feature: "in_seam", impact: "+0.034", desc: "LBW" }], modelNotes: "Aggressive opener." }
+    },
+    {
+      id: "player-ryan-rickelton",
+      name: "Ryan Rickelton",
+      country: "South Africa",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 30,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RyanRickelton&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 195, avg: 32.5, sr: 91.2, centuries: 0 },
+      matchupScores: { paceHandling: 83, spinHandling: 84, bounceHandling: 83, deathExecution: 82 },
+      primaryStrength: "Exciting power hitter, quick boundary scoring in powerplay.",
+      vulnerability: "Fast bouncer directed at throat; away turn from off-spin.",
+      theoryTips: { trapName: "Bouncer at Throat", deliverySequence: "Bouncer.", phaseVulnerability: "Powerplay.", technicalFlaw: "Pulls blindly.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.3, shapAttributions: [{ feature: "bouncer", impact: "+0.038", desc: "Catch" }], modelNotes: "New talent." }
+    }
+  ],
+
+  "New Zealand": [
+    {
+      id: "player-kane-williamson",
+      name: "Kane Williamson",
+      country: "New Zealand",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 97,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KaneWilliamson&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 6810, avg: 48.6, sr: 81.3, centuries: 13 },
+      matchupScores: { paceHandling: 94, spinHandling: 93, bounceHandling: 93, deathExecution: 91 },
+      primaryStrength: "Plays the ball under his eyes later than any batsman on Earth, soft hands into slips, masterful tactician.",
+      vulnerability: "Inswinging deliveries targeting the front knee roll; sharp turn from left-arm orthodox spin.",
+      theoryTips: {
+        trapName: "In-Ducking Seam at Front Knee",
+        deliverySequence: "Bowl tight line on off stump, jagging inward to beat his late back-foot push before he can open bat face.",
+        phaseVulnerability: "Overs 1–15: Playing late makes him susceptible to fast inward movement.",
+        technicalFlaw: "Dabs so late that balls cutting in sharply hit his pads before bat face can angle it away.",
+        fieldInstruction: "Slip, gully, and backward point packed tight; ring up to stop soft-handed singles."
+      },
+      mlShapData: { dismissalProb: 7.3, expectedRuns: 1.1, shapAttributions: [{ feature: "in_seam_full", impact: "+0.038", desc: "Beats late defensive bat" }], modelNotes: "Highest control percentage in database (88.4%)." }
+    },
+    {
+      id: "player-trent-boult",
+      name: "Trent Boult",
+      country: "New Zealand",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TrentBoult&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 211, avg: 25.2, econ: 4.93, fifers: 6 },
+      matchupScores: { paceHandling: 92, spinHandling: 93, bounceHandling: 93, deathExecution: 91 },
+      primaryStrength: "Lethal left-arm inswing into right-handers, World Cup opening spell terror.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Fast Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.1, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-rachin-ravindra",
+      name: "Rachin Ravindra",
+      country: "New Zealand",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RachinRavindra&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 820, wickets: 18, bat_avg: 41.0, bowl_econ: 5.8 },
+      matchupScores: { paceHandling: 93, spinHandling: 90, bounceHandling: 89, deathExecution: 88 },
+      primaryStrength: "Clean classical bat swing, effortless power over extra cover, World Cup breakout prodigy.",
+      vulnerability: "Bouncers climbing over his shoulder; off-spin turning away outside off.",
+      theoryTips: { trapName: "Body-Line Short Ball", deliverySequence: "Sharp bouncer into his ribs.", phaseVulnerability: "Overs 1–10.", technicalFlaw: "Expansive follow through.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 7.7, expectedRuns: 1.3, shapAttributions: [{ feature: "bouncer", impact: "+0.036", desc: "Top edge" }], modelNotes: "Superstar profile." }
+    },
+    {
+      id: "player-daryl-mitchell",
+      name: "Daryl Mitchell",
+      country: "New Zealand",
+      role: "Middle-Order Batsman",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DarylMitchell&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1577, wickets: 15, bat_avg: 52.5, bowl_econ: 5.75 },
+      matchupScores: { paceHandling: 90, spinHandling: 88, bounceHandling: 92, deathExecution: 90 },
+      primaryStrength: "Monster hitter down the ground, fearless against world-class spin, immense physical power.",
+      vulnerability: "Wide outside off-stump yorkers; fast outswing drawing thick edge to keeper.",
+      theoryTips: { trapName: "Wide Yorker Corridor", deliverySequence: "Fire yorkers outside off.", phaseVulnerability: "Death.", technicalFlaw: "Commits to leg-side launch.", fieldInstruction: "Long-on and long-off deep." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.3, shapAttributions: [{ feature: "wide_yorker", impact: "+0.039", desc: "Denied straight leverage" }], modelNotes: "Dominant middle-overs anchor." }
+    },
+    {
+      id: "player-devon-conway",
+      name: "Devon Conway",
+      country: "New Zealand",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DevonConway&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1247, avg: 44.5, sr: 86.8, centuries: 5 },
+      matchupScores: { paceHandling: 90, spinHandling: 88, bounceHandling: 89, deathExecution: 86 },
+      primaryStrength: "Unflappable temperament, crisp cover drives, impeccable placement through backward point.",
+      vulnerability: "Right-arm over pace angling across him nipping away off good length.",
+      theoryTips: { trapName: "4th Stump Outswinger", deliverySequence: "Pitch good length and seam away.", phaseVulnerability: "Powerplay.", technicalFlaw: "Pushes away from body.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.5, expectedRuns: 1.2, shapAttributions: [{ feature: "outswing", impact: "+0.035", desc: "Edge" }], modelNotes: "Opener." }
+    },
+    {
+      id: "player-mitchell-santner",
+      name: "Mitchell Santner",
+      country: "New Zealand",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MitchellSantner&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1320, wickets: 112, bat_avg: 27.5, bowl_econ: 4.88 },
+      matchupScores: { paceHandling: 89, spinHandling: 85, bounceHandling: 87, deathExecution: 88 },
+      primaryStrength: "World's most economical finger spinner, lethal arm ball, clutch lower-order hitting.",
+      vulnerability: "Fast rising bouncer.",
+      theoryTips: { trapName: "Bouncer at Throat", deliverySequence: "Fast short delivery.", phaseVulnerability: "Death.", technicalFlaw: "Awkward hook.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.034", desc: "Catch" }], modelNotes: "Economical." }
+    },
+    {
+      id: "player-matt-henry",
+      name: "Matt Henry",
+      country: "New Zealand",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MattHenry&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 141, avg: 26.3, econ: 5.21, fifers: 2 },
+      matchupScores: { paceHandling: 89, spinHandling: 87, bounceHandling: 88, deathExecution: 86 },
+      primaryStrength: "Deadly powerplay swing and seam, top of off-stump destroyer.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-tim-southee",
+      name: "Tim Southee",
+      country: "New Zealand",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 37,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TimSouthee&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 221, avg: 33.6, econ: 5.45, fifers: 3 },
+      matchupScores: { paceHandling: 85, spinHandling: 84, bounceHandling: 84, deathExecution: 85 },
+      primaryStrength: "Master outswinger, crafty leg-cutter, big sixes down the ground.",
+      vulnerability: "Tailender slogger.",
+      theoryTips: { trapName: "Slower Ball Outside Off", deliverySequence: "Wide cutter.", phaseVulnerability: "Tail.", technicalFlaw: "Slogs across.", fieldInstruction: "Boundary." },
+      mlShapData: { dismissalProb: 10.8, expectedRuns: 0.8, shapAttributions: [{ feature: "slower_ball", impact: "+0.042", desc: "Catch" }], modelNotes: "Veteran." }
+    },
+    {
+      id: "player-lockie-ferguson",
+      name: "Lockie Ferguson",
+      country: "New Zealand",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=LockieFerguson&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 99, avg: 31.5, econ: 5.75, fifers: 1 },
+      matchupScores: { paceHandling: 88, spinHandling: 86, bounceHandling: 89, deathExecution: 84 },
+      primaryStrength: "Terrifying 150 km/h thunderbolts, steep throat-bouncers.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Static.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-glenn-phillips",
+      name: "Glenn Phillips",
+      country: "New Zealand",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 29,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=GlennPhillips&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 850, wickets: 12, bat_avg: 35.4, bowl_econ: 5.45 },
+      matchupScores: { paceHandling: 87, spinHandling: 84, bounceHandling: 87, deathExecution: 83 },
+      primaryStrength: "Insane athletic boundary catching, explosive power, golden-arm off-spin breakthroughs.",
+      vulnerability: "Full outswingers outside off; fast yorkers.",
+      theoryTips: { trapName: "Wide Yorker", deliverySequence: "Wide yorker outside off.", phaseVulnerability: "Death.", technicalFlaw: "Swings blindly through off.", fieldInstruction: "Deep point." },
+      mlShapData: { dismissalProb: 8.0, expectedRuns: 1.3, shapAttributions: [{ feature: "wide_yorker", impact: "+0.038", desc: "Edge" }], modelNotes: "Dynamic." }
+    },
+    {
+      id: "player-tom-latham",
+      name: "Tom Latham",
+      country: "New Zealand",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TomLatham&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 3950, avg: 34.9, sr: 85.6, centuries: 7 },
+      matchupScores: { paceHandling: 89, spinHandling: 84, bounceHandling: 85, deathExecution: 82 },
+      primaryStrength: "Sweep specialist, resilient middle-overs anchor.",
+      vulnerability: "Fast bouncer directed at head; sharp in-seam.",
+      theoryTips: { trapName: "Throat Bouncer", deliverySequence: "Fast short ball.", phaseVulnerability: "Middle overs.", technicalFlaw: "Lifts head on pull.", fieldInstruction: "Deep square." },
+      mlShapData: { dismissalProb: 7.6, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.032", desc: "Catch" }], modelNotes: "Steady." }
+    },
+    {
+      id: "player-ish-sodhi",
+      name: "Ish Sodhi",
+      country: "New Zealand",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 87,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=IshSodhi&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 61, avg: 35.4, econ: 5.6, fifers: 1 },
+      matchupScores: { paceHandling: 86, spinHandling: 82, bounceHandling: 85, deathExecution: 80 },
+      primaryStrength: "Tall leg-break with steep bounce, deceptive googly.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.046", desc: "Out" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-mark-chapman",
+      name: "Mark Chapman",
+      country: "New Zealand",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MarkChapman&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 540, avg: 31.7, sr: 89.2, centuries: 2 },
+      matchupScores: { paceHandling: 85, spinHandling: 81, bounceHandling: 83, deathExecution: 80 },
+      primaryStrength: "Fast rotation of strike, aggressive sweep.",
+      vulnerability: "Outside off-stump outswing.",
+      theoryTips: { trapName: "Channel Seam", deliverySequence: "Good length moving away.", phaseVulnerability: "Middle.", technicalFlaw: "Slices drive.", fieldInstruction: "Cover and point." },
+      mlShapData: { dismissalProb: 7.8, expectedRuns: 1.2, shapAttributions: [{ feature: "away_seam", impact: "+0.033", desc: "Edge" }], modelNotes: "Specialist." }
+    },
+    {
+      id: "player-will-young",
+      name: "Will Young",
+      country: "New Zealand",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=WillYoung&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1120, avg: 40.0, sr: 84.5, centuries: 3 },
+      matchupScores: { paceHandling: 85, spinHandling: 83, bounceHandling: 85, deathExecution: 81 },
+      primaryStrength: "Classical technique, punch off back foot.",
+      vulnerability: "In-nipping seam between bat and pad.",
+      theoryTips: { trapName: "In-Seamer", deliverySequence: "Full length nip-backer.", phaseVulnerability: "Powerplay.", technicalFlaw: "Gap in gate.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.1, shapAttributions: [{ feature: "in_seam", impact: "+0.035", desc: "Bowled" }], modelNotes: "Anchor." }
+    },
+    {
+      id: "player-kyle-jamieson",
+      name: "Kyle Jamieson",
+      country: "New Zealand",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 87,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KyleJamieson&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 14, avg: 36.5, econ: 4.95, fifers: 0 },
+      matchupScores: { paceHandling: 86, spinHandling: 82, bounceHandling: 83, deathExecution: 84 },
+      primaryStrength: "6ft 8in towering release, steep bounce from good length.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Full Yorker", deliverySequence: "Yorker at toes.", phaseVulnerability: "Tail.", technicalFlaw: "Late bat down.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.0, expectedRuns: 0.7, shapAttributions: [{ feature: "yorker", impact: "+0.045", desc: "Bowled" }], modelNotes: "Tail." }
+    }
+  ],
+
+  "Pakistan": [
+    {
+      id: "player-babar-azam",
+      name: "Babar Azam",
+      country: "Pakistan",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=BabarAzam&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 5729, avg: 56.7, sr: 88.7, centuries: 19 },
+      matchupScores: { paceHandling: 92, spinHandling: 94, bounceHandling: 95, deathExecution: 92 },
+      primaryStrength: "World's most aesthetically pristine cover drive, peerless stroke timing, calm anchor temperament.",
+      vulnerability: "Left-arm pace incoming angle in powerplay (LBW); dot-ball pressure when boundaries are blocked.",
+      theoryTips: {
+        trapName: "Left-Arm In-Ducker & Ring Strangle",
+        deliverySequence: "Deploy left-arm fast bowler over the wicket; pitch on off-stump angling inward into front pad while packing the cover boundary.",
+        phaseVulnerability: "Overs 1–8: Front foot plants across before head aligns with trajectory; dot balls induce rash aerial strokes.",
+        technicalFlaw: "Plays late with an open bat face; when forced to push the scoring rate, he edges aerial cuts to backward point.",
+        fieldInstruction: "Backward point, 2 slips, and deep cover in place."
+      },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.2, shapAttributions: [{ feature: "left_arm_pace_inswing", impact: "+0.043", desc: "LBW vulnerability 38%" }], modelNotes: "Top-rated accumulator in database." }
+    },
+    {
+      id: "player-shaheen-shah-afridi",
+      name: "Shaheen Shah Afridi",
+      country: "Pakistan",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShaheenShahAfridi&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 104, avg: 23.9, econ: 5.54, fifers: 3 },
+      matchupScores: { paceHandling: 94, spinHandling: 93, bounceHandling: 92, deathExecution: 91 },
+      primaryStrength: "Devastating first-over opening spell wickets, 145 km/h searing inswing into right-handers' front pad, big hitting at death.",
+      vulnerability: "Tailender; swings wildly across line.",
+      theoryTips: { trapName: "Fast Yorker at Stumps", deliverySequence: "Full yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Exposes stumps.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.2, expectedRuns: 0.8, shapAttributions: [{ feature: "yorker", impact: "+0.049", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-mohammad-rizwan",
+      name: "Mohammad Rizwan",
+      country: "Pakistan",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MohammadRizwan&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2088, avg: 40.1, sr: 89.8, centuries: 3 },
+      matchupScores: { paceHandling: 94, spinHandling: 89, bounceHandling: 93, deathExecution: 90 },
+      primaryStrength: "Relentless energy, pick-up sweep against pace, exceptional boundary running, warrior spirit.",
+      vulnerability: "High short ball aimed at the helmet; wide off-cutters outside off stump.",
+      theoryTips: { trapName: "Throat Bouncer & Deep Square Trap", deliverySequence: "Steep bouncer directed right at throat with deep backward square leg waiting.", phaseVulnerability: "Middle overs.", technicalFlaw: "Falls over to off-side when picking up leg-side strokes.", fieldInstruction: "Deep fine leg, deep square leg." },
+      mlShapData: { dismissalProb: 7.8, expectedRuns: 1.2, shapAttributions: [{ feature: "throat_bouncer", impact: "+0.039", desc: "Top edge" }], modelNotes: "High stamina." }
+    },
+    {
+      id: "player-fakhar-zaman",
+      name: "Fakhar Zaman",
+      country: "Pakistan",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 36,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=FakharZaman&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 3492, avg: 46.5, sr: 93.3, centuries: 11 },
+      matchupScores: { paceHandling: 90, spinHandling: 90, bounceHandling: 91, deathExecution: 86 },
+      primaryStrength: "Match-winning double-century power, brutal pull shot, uncontainable when in full flow.",
+      vulnerability: "Away-moving delivery from around the wicket; off-spin turning away outside off.",
+      theoryTips: { trapName: "Around-the-Wicket Seamer", deliverySequence: "Angle across from around the wicket, seam away on 5th stump.", phaseVulnerability: "Powerplay overs 1–5.", technicalFlaw: "High backlift away from body.", fieldInstruction: "Slips and gully." },
+      mlShapData: { dismissalProb: 8.4, expectedRuns: 1.4, shapAttributions: [{ feature: "round_wicket_angle", impact: "+0.044", desc: "Outside edge" }], modelNotes: "High variance." }
+    },
+    {
+      id: "player-naseem-shah",
+      name: "Naseem Shah",
+      country: "Pakistan",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 23,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=NaseemShah&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 32, avg: 16.9, econ: 4.68, fifers: 2 },
+      matchupScores: { paceHandling: 93, spinHandling: 89, bounceHandling: 89, deathExecution: 88 },
+      primaryStrength: "Genuine 145+ km/h outswing, pristine seam presentation, clutch lower-order sixes.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.7, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Out" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-haris-rauf",
+      name: "Haris Rauf",
+      country: "Pakistan",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=HarisRauf&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 69, avg: 26.4, econ: 5.92, fifers: 1 },
+      matchupScores: { paceHandling: 88, spinHandling: 87, bounceHandling: 87, deathExecution: 85 },
+      primaryStrength: "Fierce 150+ km/h thunderbolts, deceptive slower ball bouncer, high intensity.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Swings blindly.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.052", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-shadab-khan",
+      name: "Shadab Khan",
+      country: "Pakistan",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 27,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShadabKhan&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 855, wickets: 83, bat_avg: 26.7, bowl_econ: 5.24 },
+      matchupScores: { paceHandling: 89, spinHandling: 85, bounceHandling: 87, deathExecution: 84 },
+      primaryStrength: "Brilliant athletic fielder, deceptive googly, explosive middle-order boundary striker.",
+      vulnerability: "High bouncers; full pace outside off.",
+      theoryTips: { trapName: "Bouncer into Body", deliverySequence: "Bouncer at helmet.", phaseVulnerability: "Middle.", technicalFlaw: "Hangs back.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.1, expectedRuns: 1.2, shapAttributions: [{ feature: "bouncer", impact: "+0.035", desc: "Catch" }], modelNotes: "All-rounder." }
+    },
+    {
+      id: "player-imam-ul-haq",
+      name: "Imam-ul-Haq",
+      country: "Pakistan",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 30,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ImamulHaq&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 3138, avg: 48.3, sr: 82.4, centuries: 9 },
+      matchupScores: { paceHandling: 84, spinHandling: 85, bounceHandling: 84, deathExecution: 83 },
+      primaryStrength: "Disciplined leave outside off, strong off-side punch, solid accumulator.",
+      vulnerability: "In-nipping deliveries targeting the stumps; tight off-spin.",
+      theoryTips: { trapName: "Full In-Nip LBW", deliverySequence: "Full seam nipping inward to pad.", phaseVulnerability: "Powerplay.", technicalFlaw: "Slow front foot movement.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.6, expectedRuns: 1.1, shapAttributions: [{ feature: "in_seam", impact: "+0.033", desc: "LBW" }], modelNotes: "Anchor." }
+    },
+    {
+      id: "player-abdullah-shafique",
+      name: "Abdullah Shafique",
+      country: "Pakistan",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AbdullahShafique&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 435, avg: 36.2, sr: 88.0, centuries: 1 },
+      matchupScores: { paceHandling: 88, spinHandling: 86, bounceHandling: 84, deathExecution: 84 },
+      primaryStrength: "Pure classical strokeplay, high elbow straight drive, composed temperament.",
+      vulnerability: "Moving deliveries on 5th stump early in innings.",
+      theoryTips: { trapName: "5th Stump Outswing", deliverySequence: "Good length seaming away.", phaseVulnerability: "Overs 1–10.", technicalFlaw: "Pushes at ball.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.7, expectedRuns: 1.2, shapAttributions: [{ feature: "outswing", impact: "+0.036", desc: "Edge" }], modelNotes: "Class talent." }
+    },
+    {
+      id: "player-iftikhar-ahmed",
+      name: "Iftikhar Ahmed",
+      country: "Pakistan",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=IftikharAhmed&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 614, wickets: 16, bat_avg: 38.3, bowl_econ: 5.48 },
+      matchupScores: { paceHandling: 84, spinHandling: 86, bounceHandling: 85, deathExecution: 81 },
+      primaryStrength: "Massive six hitting down the ground ('Chacha'), handy off-spin bowling.",
+      vulnerability: "Fast bouncers right at the eyes; wide yorkers outside off.",
+      theoryTips: { trapName: "Wide Yorker Tramline", deliverySequence: "Wide yorker outside off.", phaseVulnerability: "Death.", technicalFlaw: "Commits to front foot pull.", fieldInstruction: "Deep point." },
+      mlShapData: { dismissalProb: 8.3, expectedRuns: 1.3, shapAttributions: [{ feature: "wide_yorker", impact: "+0.037", desc: "Sliced" }], modelNotes: "Finisher." }
+    },
+    {
+      id: "player-mohammad-nawaz",
+      name: "Mohammad Nawaz",
+      country: "Pakistan",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MohammadNawaz&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 420, wickets: 42, bat_avg: 20.0, bowl_econ: 5.15 },
+      matchupScores: { paceHandling: 83, spinHandling: 80, bounceHandling: 85, deathExecution: 81 },
+      primaryStrength: "Tight left-arm orthodox bowling, clean six hitter.",
+      vulnerability: "Short deliveries climbing into body.",
+      theoryTips: { trapName: "Bouncer", deliverySequence: "Sharp bouncer.", phaseVulnerability: "Middle.", technicalFlaw: "Pulls with high head.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.034", desc: "Top edge" }], modelNotes: "Specialist." }
+    },
+    {
+      id: "player-hasan-ali",
+      name: "Hasan Ali",
+      country: "Pakistan",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 87,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=HasanAli&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 100, avg: 31.0, econ: 5.8, fifers: 4 },
+      matchupScores: { paceHandling: 83, spinHandling: 83, bounceHandling: 83, deathExecution: 80 },
+      primaryStrength: "Fiery skiddy pace, lethal reverse swing, big celebration.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Swings blindly.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.2, expectedRuns: 0.7, shapAttributions: [{ feature: "yorker", impact: "+0.046", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-mohammad-wasim-jr",
+      name: "Mohammad Wasim Jr",
+      country: "Pakistan",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MohammadWasimJr&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 34, avg: 23.5, econ: 5.42, fifers: 0 },
+      matchupScores: { paceHandling: 84, spinHandling: 80, bounceHandling: 83, deathExecution: 81 },
+      primaryStrength: "Accurate reverse-swinging yorkers, skiddy pace.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.8, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-usama-mir",
+      name: "Usama Mir",
+      country: "Pakistan",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 85,
+      age: 30,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=UsamaMir&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 15, avg: 35.0, econ: 5.75, fifers: 0 },
+      matchupScores: { paceHandling: 83, spinHandling: 79, bounceHandling: 81, deathExecution: 81 },
+      primaryStrength: "Tall leg-spinner with big bounce, sharp flipper.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Static.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Out" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-salman-ali-agha",
+      name: "Salman Ali Agha",
+      country: "Pakistan",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 32,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=SalmanAliAgha&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 520, wickets: 8, bat_avg: 40.0, bowl_econ: 5.9 },
+      matchupScores: { paceHandling: 85, spinHandling: 82, bounceHandling: 81, deathExecution: 83 },
+      primaryStrength: "Handy off-spin partnership breaker, calm middle-order batting.",
+      vulnerability: "Moving pace deliveries outside off.",
+      theoryTips: { trapName: "4th Stump Outswing", deliverySequence: "Good length seaming away.", phaseVulnerability: "Middle.", technicalFlaw: "Pushes at ball.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.2, shapAttributions: [{ feature: "outswing", impact: "+0.033", desc: "Edge" }], modelNotes: "All-rounder." }
+    }
+  ],
+
+  "West Indies": [
+    {
+      id: "player-shai-hope",
+      name: "Shai Hope",
+      country: "West Indies",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShaiHope&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 5177, avg: 50.2, sr: 78.5, centuries: 16 },
+      matchupScores: { paceHandling: 94, spinHandling: 90, bounceHandling: 90, deathExecution: 88 },
+      primaryStrength: "Sensational ODI average (50+), calm anchor, textbook straight drives.",
+      vulnerability: "Sharp in-seam targeting front pad early; bouncers directed at helmet.",
+      theoryTips: { trapName: "In-Nip LBW Trap", deliverySequence: "Good length nipping inward to hit front pad.", phaseVulnerability: "Overs 1–15.", technicalFlaw: "Stands deep in crease.", fieldInstruction: "Slips and mid-on." },
+      mlShapData: { dismissalProb: 7.2, expectedRuns: 1.1, shapAttributions: [{ feature: "in_seam", impact: "+0.034", desc: "LBW" }], modelNotes: "World-class accumulator." }
+    },
+    {
+      id: "player-nicholas-pooran",
+      name: "Nicholas Pooran",
+      country: "West Indies",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=NicholasPooran&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1983, avg: 39.6, sr: 99.4, centuries: 3 },
+      matchupScores: { paceHandling: 92, spinHandling: 89, bounceHandling: 91, deathExecution: 88 },
+      primaryStrength: "World's most effortless six hitting swing, brutal boundary acceleration.",
+      vulnerability: "Fast bouncer climbing at his throat; wide yorkers outside off.",
+      theoryTips: { trapName: "Bodyline Bouncer", deliverySequence: "Fast short delivery into his rib cage.", phaseVulnerability: "Middle overs.", technicalFlaw: "Pulls with head up.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.4, shapAttributions: [{ feature: "bouncer", impact: "+0.042", desc: "Top edge" }], modelNotes: "Explosive power." }
+    },
+    {
+      id: "player-alzarri-joseph",
+      name: "Alzarri Joseph",
+      country: "West Indies",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 29,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AlzarriJoseph&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 111, avg: 27.8, econ: 5.32, fifers: 1 },
+      matchupScores: { paceHandling: 90, spinHandling: 89, bounceHandling: 88, deathExecution: 87 },
+      primaryStrength: "148 km/h skiddy hostile pace, fierce bouncers.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-andre-russell",
+      name: "Andre Russell",
+      country: "West Indies",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 38,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AndreRussell&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1034, wickets: 70, bat_avg: 27.2, bowl_econ: 5.84 },
+      matchupScores: { paceHandling: 93, spinHandling: 88, bounceHandling: 90, deathExecution: 90 },
+      primaryStrength: "Pure brute force destruction, 140 km/h heavy ball bowling, match winner.",
+      vulnerability: "Fast rising bouncer right at the throat; wide yorkers outside off.",
+      theoryTips: { trapName: "Wide Yorker Squeeze", deliverySequence: "Wide yorker outside off.", phaseVulnerability: "Death.", technicalFlaw: "Cannot generate leverage when stretched wide.", fieldInstruction: "Deep point and deep cover." },
+      mlShapData: { dismissalProb: 8.5, expectedRuns: 1.5, shapAttributions: [{ feature: "wide_yorker", impact: "+0.044", desc: "Denied power" }], modelNotes: "Power." }
+    },
+    {
+      id: "player-shimron-hetmyer",
+      name: "Shimron Hetmyer",
+      country: "West Indies",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 29,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShimronHetmyer&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1520, avg: 35.3, sr: 106.8, centuries: 5 },
+      matchupScores: { paceHandling: 89, spinHandling: 83, bounceHandling: 85, deathExecution: 85 },
+      primaryStrength: "Ferocious mid-wicket pull shot, explosive strike rate.",
+      vulnerability: "Off-spin turning away outside off; bouncer into body.",
+      theoryTips: { trapName: "Off-Spin Turning Away", deliverySequence: "Off-spin turning away from left-hander.", phaseVulnerability: "Middle.", technicalFlaw: "Reaches recklessly.", fieldInstruction: "Slip and deep cover." },
+      mlShapData: { dismissalProb: 8.3, expectedRuns: 1.3, shapAttributions: [{ feature: "spin_away", impact: "+0.038", desc: "Edge" }], modelNotes: "Striker." }
+    },
+    {
+      id: "player-brandon-king",
+      name: "Brandon King",
+      country: "West Indies",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=BrandonKing&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1120, avg: 31.1, sr: 84.5, centuries: 2 },
+      matchupScores: { paceHandling: 84, spinHandling: 82, bounceHandling: 83, deathExecution: 83 },
+      primaryStrength: "Crisp straight drives, aggressive boundary hunter in powerplay.",
+      vulnerability: "Inswing onto front pad early.",
+      theoryTips: { trapName: "Full Inswinger", deliverySequence: "Full length swinging into stumps.", phaseVulnerability: "Powerplay.", technicalFlaw: "Late feet.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 8.1, expectedRuns: 1.3, shapAttributions: [{ feature: "inswing", impact: "+0.036", desc: "LBW" }], modelNotes: "Opener." }
+    },
+    {
+      id: "player-rovman-powell",
+      name: "Rovman Powell",
+      country: "West Indies",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RovmanPowell&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 970, avg: 22.5, sr: 90.0, centuries: 1 },
+      matchupScores: { paceHandling: 87, spinHandling: 85, bounceHandling: 88, deathExecution: 83 },
+      primaryStrength: "Immense physical boundary power down the ground, inspirational captain.",
+      vulnerability: "Fast bouncer directed at helmet; wide yorkers.",
+      theoryTips: { trapName: "Helmet Bouncer", deliverySequence: "Bouncer into throat.", phaseVulnerability: "Death.", technicalFlaw: "Swings blindly.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.4, expectedRuns: 1.4, shapAttributions: [{ feature: "bouncer", impact: "+0.040", desc: "Top edge" }], modelNotes: "Captain." }
+    },
+    {
+      id: "player-jason-holder",
+      name: "Jason Holder",
+      country: "West Indies",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=JasonHolder&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 2237, wickets: 159, bat_avg: 24.3, bowl_econ: 5.54 },
+      matchupScores: { paceHandling: 88, spinHandling: 83, bounceHandling: 85, deathExecution: 85 },
+      primaryStrength: "6ft 7in steep bounce, outswing with new ball, calm batting anchor.",
+      vulnerability: "Short balls into the body; full yorkers under high backlift.",
+      theoryTips: { trapName: "Fast Yorker at Toes", deliverySequence: "Yorker.", phaseVulnerability: "Middle/Death.", technicalFlaw: "High backlift.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 8.0, expectedRuns: 1.1, shapAttributions: [{ feature: "yorker", impact: "+0.035", desc: "Bowled" }], modelNotes: "Veteran." }
+    },
+    {
+      id: "player-romario-shepherd",
+      name: "Romario Shepherd",
+      country: "West Indies",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RomarioShepherd&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 365, wickets: 24, bat_avg: 22.8, bowl_econ: 6.15 },
+      matchupScores: { paceHandling: 88, spinHandling: 82, bounceHandling: 85, deathExecution: 84 },
+      primaryStrength: "Sensational 30-run single-over finisher, skiddy bowling cutters.",
+      vulnerability: "Bouncer at throat.",
+      theoryTips: { trapName: "Bouncer", deliverySequence: "Fast short ball.", phaseVulnerability: "Death.", technicalFlaw: "Hangs back.", fieldInstruction: "Deep mid-wicket." },
+      mlShapData: { dismissalProb: 8.3, expectedRuns: 1.4, shapAttributions: [{ feature: "bouncer", impact: "+0.038", desc: "Catch" }], modelNotes: "Finisher." }
+    },
+    {
+      id: "player-akeal-hosein",
+      name: "Akeal Hosein",
+      country: "West Indies",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AkealHosein&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 57, avg: 30.5, econ: 4.88, fifers: 0 },
+      matchupScores: { paceHandling: 88, spinHandling: 83, bounceHandling: 85, deathExecution: 84 },
+      primaryStrength: "Deadly new-ball left-arm arm ball, brilliant boundary saving, handy hitting.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.0, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.046", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-gudakesh-motie",
+      name: "Gudakesh Motie",
+      country: "West Indies",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=GudakeshMotie&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 28, avg: 22.4, econ: 4.6, fifers: 0 },
+      matchupScores: { paceHandling: 88, spinHandling: 86, bounceHandling: 87, deathExecution: 83 },
+      primaryStrength: "Superb turn and drift, tight middle overs control.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Bouncer", deliverySequence: "Bouncer.", phaseVulnerability: "Tail.", technicalFlaw: "Backs away.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.5, shapAttributions: [{ feature: "bouncer", impact: "+0.048", desc: "Catch" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-shamar-joseph",
+      name: "Shamar Joseph",
+      country: "West Indies",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShamarJoseph&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 12, avg: 21.5, econ: 4.95, fifers: 1 },
+      matchupScores: { paceHandling: 85, spinHandling: 87, bounceHandling: 85, deathExecution: 83 },
+      primaryStrength: "Electric 150 km/h Brisbane hero pace, skiddy aggression.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker on middle.", phaseVulnerability: "Tail.", technicalFlaw: "Wild swing.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.052", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-roston-chase",
+      name: "Roston Chase",
+      country: "West Indies",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RostonChase&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 650, wickets: 25, bat_avg: 26.0, bowl_econ: 4.9 },
+      matchupScores: { paceHandling: 82, spinHandling: 83, bounceHandling: 85, deathExecution: 81 },
+      primaryStrength: "Reliable off-spin strangle, tall middle-order batsman.",
+      vulnerability: "Fast bouncers.",
+      theoryTips: { trapName: "Throat Bouncer", deliverySequence: "Bouncer.", phaseVulnerability: "Middle.", technicalFlaw: "Awkward hook.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.033", desc: "Catch" }], modelNotes: "Solid." }
+    },
+    {
+      id: "player-keacy-carty",
+      name: "Keacy Carty",
+      country: "West Indies",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 85,
+      age: 29,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KeacyCarty&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 620, avg: 34.4, sr: 75.0, centuries: 1 },
+      matchupScores: { paceHandling: 81, spinHandling: 79, bounceHandling: 81, deathExecution: 82 },
+      primaryStrength: "Solid technique, century scorer against England.",
+      vulnerability: "Seaming deliveries outside off.",
+      theoryTips: { trapName: "Outswinger", deliverySequence: "5th stump outswing.", phaseVulnerability: "Middle.", technicalFlaw: "Pushes at ball.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.8, expectedRuns: 1.1, shapAttributions: [{ feature: "outswing", impact: "+0.034", desc: "Edge" }], modelNotes: "Young talent." }
+    },
+    {
+      id: "player-sherfane-rutherford",
+      name: "Sherfane Rutherford",
+      country: "West Indies",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 28,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=SherfaneRutherford&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 310, wickets: 6, bat_avg: 38.7, bowl_econ: 5.8 },
+      matchupScores: { paceHandling: 86, spinHandling: 84, bounceHandling: 82, deathExecution: 80 },
+      primaryStrength: "Clutch rescue knocks, explosive sixes off pace.",
+      vulnerability: "Wide off-spin; fast bouncers.",
+      theoryTips: { trapName: "Bouncer at Helmet", deliverySequence: "Short ball.", phaseVulnerability: "Death.", technicalFlaw: "Pulls blindly.", fieldInstruction: "Deep square." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.3, shapAttributions: [{ feature: "bouncer", impact: "+0.037", desc: "Catch" }], modelNotes: "Rescue hitter." }
+    }
+  ],
+
+  "Sri Lanka": [
+    {
+      id: "player-pathum-nissanka",
+      name: "Pathum Nissanka",
+      country: "Sri Lanka",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 28,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=PathumNissanka&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2240, avg: 43.9, sr: 89.4, centuries: 6 },
+      matchupScores: { paceHandling: 93, spinHandling: 90, bounceHandling: 89, deathExecution: 89 },
+      primaryStrength: "Double-century sensation (210*), master of square cut, high-class pacing.",
+      vulnerability: "Inswinging seam targeting front pad in powerplay; moving deliveries outside off.",
+      theoryTips: { trapName: "Inswinging Nip-Backer Trap", deliverySequence: "Full length swinging in to hit front pad.", phaseVulnerability: "Overs 1–8.", technicalFlaw: "Front foot plants across line.", fieldInstruction: "Slips and mid-on." },
+      mlShapData: { dismissalProb: 7.4, expectedRuns: 1.2, shapAttributions: [{ feature: "inswing", impact: "+0.037", desc: "LBW" }], modelNotes: "Double-centurion." }
+    },
+    {
+      id: "player-wanindu-hasaranga",
+      name: "Wanindu Hasaranga",
+      country: "Sri Lanka",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 95,
+      age: 29,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=WaninduHasaranga&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 920, wickets: 91, bat_avg: 24.2, bowl_econ: 5.12 },
+      matchupScores: { paceHandling: 93, spinHandling: 89, bounceHandling: 91, deathExecution: 88 },
+      primaryStrength: "Unreadable rapid googly, middle overs wicket machine, explosive lower-order bat.",
+      vulnerability: "Fast bouncers at throat; wide yorkers.",
+      theoryTips: { trapName: "Throat Bouncer", deliverySequence: "Fast short ball.", phaseVulnerability: "Death.", technicalFlaw: "Swings across.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.4, expectedRuns: 1.3, shapAttributions: [{ feature: "bouncer", impact: "+0.041", desc: "Catch" }], modelNotes: "Superstar." }
+    },
+    {
+      id: "player-kusal-mendis",
+      name: "Kusal Mendis",
+      country: "Sri Lanka",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KusalMendis&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 3780, avg: 33.1, sr: 86.5, centuries: 3 },
+      matchupScores: { paceHandling: 92, spinHandling: 87, bounceHandling: 92, deathExecution: 89 },
+      primaryStrength: "Electrifying boundary striking in powerplay, crisp flick over mid-wicket.",
+      vulnerability: "Reckless aerial drive on 5th stump; short ball.",
+      theoryTips: { trapName: "5th Stump Outswing Trap", deliverySequence: "Full outswing outside off.", phaseVulnerability: "Powerplay.", technicalFlaw: "Flies into expansive drives.", fieldInstruction: "Gully and deep cover." },
+      mlShapData: { dismissalProb: 8.1, expectedRuns: 1.3, shapAttributions: [{ feature: "outswing", impact: "+0.039", desc: "Sliced catch" }], modelNotes: "High intent." }
+    },
+    {
+      id: "player-maheesh-theekshana",
+      name: "Maheesh Theekshana",
+      country: "Sri Lanka",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MaheeshTheekshana&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 58, avg: 27.2, econ: 4.55, fifers: 1 },
+      matchupScores: { paceHandling: 93, spinHandling: 89, bounceHandling: 90, deathExecution: 90 },
+      primaryStrength: "Mystery carrom ball, stifling powerplay economy, carrom ball skids low.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Static.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.8, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-dilshan-madushanka",
+      name: "Dilshan Madushanka",
+      country: "Sri Lanka",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DilshanMadushanka&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 31, avg: 24.8, econ: 6.1, fifers: 1 },
+      matchupScores: { paceHandling: 91, spinHandling: 89, bounceHandling: 90, deathExecution: 86 },
+      primaryStrength: "Lethal left-arm inswing in powerplay, World Cup top wicket-taker.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.052", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-charith-asalanka",
+      name: "Charith Asalanka",
+      country: "Sri Lanka",
+      role: "Middle-Order Batsman",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 29,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=CharithAsalanka&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1940, wickets: 14, bat_avg: 41.2, bowl_econ: 5.15 },
+      matchupScores: { paceHandling: 90, spinHandling: 85, bounceHandling: 85, deathExecution: 87 },
+      primaryStrength: "Clutch middle-overs captain, powerful sweep and pull, golden-arm off-spin.",
+      vulnerability: "In-ducking pace into pads; sharp bouncer.",
+      theoryTips: { trapName: "Pace In-Ducker", deliverySequence: "Full seam nipping in.", phaseVulnerability: "Middle.", technicalFlaw: "Exposed pads.", fieldInstruction: "Mid-wicket." },
+      mlShapData: { dismissalProb: 7.7, expectedRuns: 1.2, shapAttributions: [{ feature: "in_seam", impact: "+0.034", desc: "LBW" }], modelNotes: "Captain." }
+    },
+    {
+      id: "player-sadeera-samarawickrama",
+      name: "Sadeera Samarawickrama",
+      country: "Sri Lanka",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 30,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=SadeeraSamarawickrama&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1210, avg: 36.6, sr: 87.2, centuries: 1 },
+      matchupScores: { paceHandling: 85, spinHandling: 83, bounceHandling: 88, deathExecution: 83 },
+      primaryStrength: "Superb spin player, fluent strike rotator, soft hands.",
+      vulnerability: "Fast outswing on good length.",
+      theoryTips: { trapName: "4th Stump Away-Nip", deliverySequence: "Pitch off, nip away.", phaseVulnerability: "Middle.", technicalFlaw: "Pushes at ball.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.5, expectedRuns: 1.1, shapAttributions: [{ feature: "outswing", impact: "+0.032", desc: "Edge" }], modelNotes: "Solid." }
+    },
+    {
+      id: "player-matheesha-pathirana",
+      name: "Matheesha Pathirana",
+      country: "Sri Lanka",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 92,
+      age: 23,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MatheeshaPathirana&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 17, avg: 26.5, econ: 6.45, fifers: 0 },
+      matchupScores: { paceHandling: 90, spinHandling: 87, bounceHandling: 88, deathExecution: 85 },
+      primaryStrength: "Malinga-style extreme round-arm sling, 150 km/h toe-crushing yorkers, unpickable trajectory.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker at middle.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.5, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.055", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-dhananjaya-de-silva",
+      name: "Dhananjaya de Silva",
+      country: "Sri Lanka",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DhananjayadeSilva&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1865, wickets: 45, bat_avg: 27.8, bowl_econ: 5.05 },
+      matchupScores: { paceHandling: 87, spinHandling: 86, bounceHandling: 84, deathExecution: 86 },
+      primaryStrength: "Silky classical drives, dependable off-spin, mature Test captain.",
+      vulnerability: "Short deliveries directed at helmet.",
+      theoryTips: { trapName: "Bouncer at Throat", deliverySequence: "Short ball.", phaseVulnerability: "Middle.", technicalFlaw: "Awkward hook.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 7.6, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.033", desc: "Catch" }], modelNotes: "Veteran." }
+    },
+    {
+      id: "player-dunith-wellalage",
+      name: "Dunith Wellalage",
+      country: "Sri Lanka",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 23,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DunithWellalage&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 290, wickets: 26, bat_avg: 20.7, bowl_econ: 5.2 },
+      matchupScores: { paceHandling: 85, spinHandling: 86, bounceHandling: 83, deathExecution: 84 },
+      primaryStrength: "Prodigious left-arm turn (5 wickets vs India), fearless young talent.",
+      vulnerability: "Fast yorkers.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Exposes stumps.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 8.8, expectedRuns: 1.0, shapAttributions: [{ feature: "yorker", impact: "+0.04", desc: "Bowled" }], modelNotes: "Rising star." }
+    },
+    {
+      id: "player-dasun-shanaka",
+      name: "Dasun Shanaka",
+      country: "Sri Lanka",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DasunShanaka&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1250, wickets: 27, bat_avg: 22.3, bowl_econ: 5.75 },
+      matchupScores: { paceHandling: 83, spinHandling: 83, bounceHandling: 82, deathExecution: 81 },
+      primaryStrength: "Big six hitter in death overs, handy seam bowling.",
+      vulnerability: "Wide outside off yorkers.",
+      theoryTips: { trapName: "Wide Yorker", deliverySequence: "Wide yorker outside off.", phaseVulnerability: "Death.", technicalFlaw: "Reaches recklessly.", fieldInstruction: "Deep point." },
+      mlShapData: { dismissalProb: 8.4, expectedRuns: 1.3, shapAttributions: [{ feature: "wide_yorker", impact: "+0.038", desc: "Catch" }], modelNotes: "Finisher." }
+    },
+    {
+      id: "player-kasun-rajitha",
+      name: "Kasun Rajitha",
+      country: "Sri Lanka",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KasunRajitha&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 43, avg: 33.5, econ: 6.05, fifers: 1 },
+      matchupScores: { paceHandling: 82, spinHandling: 81, bounceHandling: 85, deathExecution: 79 },
+      primaryStrength: "Good length seam bowling in powerplay.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-dushmantha-chameera",
+      name: "Dushmantha Chameera",
+      country: "Sri Lanka",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 34,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=DushmanthaChameera&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 56, avg: 33.1, econ: 5.48, fifers: 1 },
+      matchupScores: { paceHandling: 87, spinHandling: 83, bounceHandling: 85, deathExecution: 83 },
+      primaryStrength: "Hostile 145 km/h skiddy pace, lethal bouncers.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Static.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.2, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.052", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-kusal-perera",
+      name: "Kusal Perera",
+      country: "Sri Lanka",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=KusalPerera&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 3237, avg: 31.1, sr: 93.4, centuries: 6 },
+      matchupScores: { paceHandling: 87, spinHandling: 86, bounceHandling: 83, deathExecution: 81 },
+      primaryStrength: "Jayasuriya-like powerplay destruction, heroic Durban match-winner.",
+      vulnerability: "Short deliveries into helmet; moving pace outside off.",
+      theoryTips: { trapName: "Bouncer at Throat", deliverySequence: "Bouncer.", phaseVulnerability: "Powerplay.", technicalFlaw: "Pulls blindly.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.5, expectedRuns: 1.4, shapAttributions: [{ feature: "bouncer", impact: "+0.042", desc: "Top edge" }], modelNotes: "High risk." }
+    },
+    {
+      id: "player-chamika-karunaratne",
+      name: "Chamika Karunaratne",
+      country: "Sri Lanka",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 85,
+      age: 30,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ChamikaKarunaratne&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 480, wickets: 28, bat_avg: 25.2, bowl_econ: 5.6 },
+      matchupScores: { paceHandling: 82, spinHandling: 79, bounceHandling: 80, deathExecution: 80 },
+      primaryStrength: "High energy, handy cutter variations, fighting batting.",
+      vulnerability: "Fast bouncers.",
+      theoryTips: { trapName: "Short Ball", deliverySequence: "Bouncer.", phaseVulnerability: "Middle.", technicalFlaw: "Fends awkwardly.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.035", desc: "Catch" }], modelNotes: "All-rounder." }
+    }
+  ],
+
+  "Bangladesh": [
+    {
+      id: "player-shakib-al-hasan",
+      name: "Shakib Al Hasan",
+      country: "Bangladesh",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 96,
+      age: 39,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShakibAlHasan&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 7570, wickets: 317, bat_avg: 37.2, bowl_econ: 4.45 },
+      matchupScores: { paceHandling: 95, spinHandling: 94, bounceHandling: 92, deathExecution: 92 },
+      primaryStrength: "Greatest all-rounder in modern white ball cricket, master of drift and arm-ball, ruthless middle-overs batsman.",
+      vulnerability: "Fast climbing bouncer into chest; sharp off-spin turning away outside off.",
+      theoryTips: { trapName: "Fast Bodyline Bouncer & Spin Drift", deliverySequence: "Heavy 140+ km/h bouncer directed at right armpit.", phaseVulnerability: "Middle overs.", technicalFlaw: "Swings cross-batted when cramped for room.", fieldInstruction: "Deep mid-wicket and deep square leg." },
+      mlShapData: { dismissalProb: 7.6, expectedRuns: 1.2, shapAttributions: [{ feature: "bouncer_body", impact: "+0.038", desc: "Cross-bat pop" }], modelNotes: "Legendary all-rounder." }
+    },
+    {
+      id: "player-mustafizur-rahman",
+      name: "Mustafizur Rahman",
+      country: "Bangladesh",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 30,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MustafizurRahman&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 162, avg: 25.8, econ: 5.12, fifers: 5 },
+      matchupScores: { paceHandling: 90, spinHandling: 90, bounceHandling: 93, deathExecution: 91 },
+      primaryStrength: "Deadly off-cutter ('Fizz'), unpickable wrist turn on pitch, pinpoint death overs wide yorkers.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker at stumps.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.1, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-mushfiqur-rahim",
+      name: "Mushfiqur Rahim",
+      country: "Bangladesh",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 39,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MushfiqurRahim&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 7792, avg: 36.7, sr: 79.5, centuries: 9 },
+      matchupScores: { paceHandling: 88, spinHandling: 87, bounceHandling: 89, deathExecution: 84 },
+      primaryStrength: "Master of sweep and paddle sweep, relentless accumulator under pressure.",
+      vulnerability: "Express pace climbing bouncers; full pace outside off stump.",
+      theoryTips: { trapName: "High Bouncer & Deep Square Trap", deliverySequence: "Fast bouncer climbing above shoulders.", phaseVulnerability: "Middle overs.", technicalFlaw: "Top-edges hook against express pace.", fieldInstruction: "Deep fine leg and deep square leg." },
+      mlShapData: { dismissalProb: 7.7, expectedRuns: 1.2, shapAttributions: [{ feature: "express_bouncer", impact: "+0.039", desc: "Top edge" }], modelNotes: "Veteran." }
+    },
+    {
+      id: "player-taskin-ahmed",
+      name: "Taskin Ahmed",
+      country: "Bangladesh",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TaskinAhmed&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 100, avg: 30.2, econ: 5.45, fifers: 2 },
+      matchupScores: { paceHandling: 89, spinHandling: 85, bounceHandling: 90, deathExecution: 86 },
+      primaryStrength: "Hostile 145 km/h outswing, fierce powerplay bounce, team spearhead.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Swings wildly.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-najmul-hossain-shanto",
+      name: "Najmul Hossain Shanto",
+      country: "Bangladesh",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 28,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=NajmulHossainShanto&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1420, avg: 32.2, sr: 78.4, centuries: 2 },
+      matchupScores: { paceHandling: 90, spinHandling: 87, bounceHandling: 87, deathExecution: 83 },
+      primaryStrength: "Classical high elbow cover drive, mature captaincy anchor.",
+      vulnerability: "Inswing onto front pad early; bouncer directed at head.",
+      theoryTips: { trapName: "Inswinging Seam LBW", deliverySequence: "Full length inswinger hitting pad.", phaseVulnerability: "Powerplay.", technicalFlaw: "Front foot plants.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.8, expectedRuns: 1.2, shapAttributions: [{ feature: "inswing", impact: "+0.035", desc: "LBW" }], modelNotes: "Captain." }
+    },
+    {
+      id: "player-mehidy-hasan-miraz",
+      name: "Mehidy Hasan Miraz",
+      country: "Bangladesh",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 28,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MehidyHasanMiraz&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1390, wickets: 102, bat_avg: 24.3, bowl_econ: 4.75 },
+      matchupScores: { paceHandling: 86, spinHandling: 88, bounceHandling: 88, deathExecution: 84 },
+      primaryStrength: "Superb off-spin accuracy, clutch lower-order ODI centuries, match winner.",
+      vulnerability: "Fast bouncers.",
+      theoryTips: { trapName: "Bouncer at Throat", deliverySequence: "Bouncer.", phaseVulnerability: "Middle.", technicalFlaw: "Fends awkwardly.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 8.0, expectedRuns: 1.2, shapAttributions: [{ feature: "bouncer", impact: "+0.036", desc: "Catch" }], modelNotes: "All-rounder." }
+    },
+    {
+      id: "player-litton-das",
+      name: "Litton Das",
+      country: "Bangladesh",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=LittonDas&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2560, avg: 32.4, sr: 87.5, centuries: 5 },
+      matchupScores: { paceHandling: 85, spinHandling: 87, bounceHandling: 85, deathExecution: 84 },
+      primaryStrength: "Phenomenal strokeplay, lightning fast hand speed in powerplay.",
+      vulnerability: "Reckless aerial drives outside off; nip-backer onto stumps.",
+      theoryTips: { trapName: "Channel Outswing", deliverySequence: "Good length outswing enticing drive.", phaseVulnerability: "Powerplay.", technicalFlaw: "Swings with feet static.", fieldInstruction: "Gully and 2 slips." },
+      mlShapData: { dismissalProb: 8.3, expectedRuns: 1.3, shapAttributions: [{ feature: "outswing", impact: "+0.041", desc: "Edge" }], modelNotes: "High talent." }
+    },
+    {
+      id: "player-towhid-hridoy",
+      name: "Towhid Hridoy",
+      country: "Bangladesh",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TowhidHridoy&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 810, avg: 36.8, sr: 85.6, centuries: 0 },
+      matchupScores: { paceHandling: 87, spinHandling: 83, bounceHandling: 83, deathExecution: 82 },
+      primaryStrength: "Young modern middle-overs striker, powerful boundary hitting.",
+      vulnerability: "Express pace bouncers.",
+      theoryTips: { trapName: "Short Ball", deliverySequence: "Bouncer at body.", phaseVulnerability: "Middle.", technicalFlaw: "Late hook.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.3, shapAttributions: [{ feature: "bouncer", impact: "+0.037", desc: "Top edge" }], modelNotes: "Rising star." }
+    },
+    {
+      id: "player-shoriful-islam",
+      name: "Shoriful Islam",
+      country: "Bangladesh",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=ShorifulIslam&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 52, avg: 25.4, econ: 5.42, fifers: 0 },
+      matchupScores: { paceHandling: 88, spinHandling: 84, bounceHandling: 85, deathExecution: 83 },
+      primaryStrength: "Left-arm swing and sharp bounce, powerplay wicket taker.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.8, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-mahmudullah",
+      name: "Mahmudullah",
+      country: "Bangladesh",
+      role: "Middle-Order Batsman",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 40,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=Mahmudullah&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 5380, avg: 36.1, sr: 77.2, centuries: 5 },
+      matchupScores: { paceHandling: 85, spinHandling: 83, bounceHandling: 83, deathExecution: 81 },
+      primaryStrength: "World Cup century specialist ('Silent Killer'), calm crisis finisher.",
+      vulnerability: "Fast bouncer; full yorkers outside off.",
+      theoryTips: { trapName: "Throat Bouncer", deliverySequence: "Fast bouncer into body.", phaseVulnerability: "Death.", technicalFlaw: "Awkward fend.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.2, shapAttributions: [{ feature: "bouncer", impact: "+0.038", desc: "Catch" }], modelNotes: "Veteran." }
+    },
+    {
+      id: "player-hasan-mahmud",
+      name: "Hasan Mahmud",
+      country: "Bangladesh",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=HasanMahmud&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 30, avg: 31.8, econ: 5.95, fifers: 1 },
+      matchupScores: { paceHandling: 84, spinHandling: 82, bounceHandling: 81, deathExecution: 80 },
+      primaryStrength: "Skiddy outswing, tight yorkers.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Static.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.6, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-tanzim-hasan-sakib",
+      name: "Tanzim Hasan Sakib",
+      country: "Bangladesh",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 86,
+      age: 23,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TanzimHasanSakib&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 19, avg: 27.5, econ: 5.8, fifers: 0 },
+      matchupScores: { paceHandling: 85, spinHandling: 84, bounceHandling: 81, deathExecution: 79 },
+      primaryStrength: "Fiery aggression, sharp nip-backer in powerplay.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-mahedi-hasan",
+      name: "Mahedi Hasan",
+      country: "Bangladesh",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 85,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MahediHasan&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 310, wickets: 22, bat_avg: 19.5, bowl_econ: 4.8 },
+      matchupScores: { paceHandling: 84, spinHandling: 83, bounceHandling: 80, deathExecution: 80 },
+      primaryStrength: "New ball off-spin, tight powerplay control.",
+      vulnerability: "Fast bouncer.",
+      theoryTips: { trapName: "Bouncer", deliverySequence: "Short delivery.", phaseVulnerability: "Middle.", technicalFlaw: "Hangs back.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.034", desc: "Catch" }], modelNotes: "Specialist." }
+    },
+    {
+      id: "player-nasum-ahmed",
+      name: "Nasum Ahmed",
+      country: "Bangladesh",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "LHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 85,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=NasumAhmed&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 18, avg: 34.0, econ: 4.7, fifers: 0 },
+      matchupScores: { paceHandling: 83, spinHandling: 82, bounceHandling: 80, deathExecution: 82 },
+      primaryStrength: "Darted left-arm spin, stifles powerplay boundaries.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.2, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-tanzid-hasan",
+      name: "Tanzid Hasan",
+      country: "Bangladesh",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 85,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=TanzidHasan&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 410, avg: 25.6, sr: 86.0, centuries: 0 },
+      matchupScores: { paceHandling: 82, spinHandling: 80, bounceHandling: 82, deathExecution: 80 },
+      primaryStrength: "Attacking strokeplay in powerplay, handsome pull.",
+      vulnerability: "Seaming outswinger on 5th stump.",
+      theoryTips: { trapName: "Channel Outswinger", deliverySequence: "Pitch good length, seam away.", phaseVulnerability: "Powerplay.", technicalFlaw: "Pushes away.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 8.5, expectedRuns: 1.3, shapAttributions: [{ feature: "outswing", impact: "+0.04", desc: "Edge" }], modelNotes: "Young opener." }
+    }
+  ],
+
+  "Afghanistan": [
+    {
+      id: "player-rashid-khan",
+      name: "Rashid Khan",
+      country: "Afghanistan",
+      role: "Spin Bowler",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 98,
+      age: 28,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RashidKhan&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1322, wickets: 183, bat_avg: 20.0, bowl_econ: 4.19 },
+      matchupScores: { paceHandling: 97, spinHandling: 96, bounceHandling: 95, deathExecution: 93 },
+      primaryStrength: "World's fastest wrist-snap googly (100 km/h), impossible to read off the hand, helicopter six hitter.",
+      vulnerability: "Wide outside off yorkers; high bouncers aimed at helmet.",
+      theoryTips: { trapName: "High Bouncer & Wide Yorker Squeeze", deliverySequence: "Bowl bouncer right at throat, followed by wide yorker outside off.", phaseVulnerability: "Death overs.", technicalFlaw: "Clears front leg completely; vulnerable when ball is dragged wide.", fieldInstruction: "Deep point and deep mid-wicket." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.3, shapAttributions: [{ feature: "wide_yorker", impact: "+0.041", desc: "Denied leverage" }], modelNotes: "Superstar." }
+    },
+    {
+      id: "player-rahmanullah-gurbaz",
+      name: "Rahmanullah Gurbaz",
+      country: "Afghanistan",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 24,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RahmanullahGurbaz&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1640, avg: 38.1, sr: 88.5, centuries: 6 },
+      matchupScores: { paceHandling: 92, spinHandling: 89, bounceHandling: 90, deathExecution: 89 },
+      primaryStrength: "World Cup leading boundary scorer, explosive powerplay hitter, fearless pull shot.",
+      vulnerability: "Full outswingers on 5th stump; sharp bouncer.",
+      theoryTips: { trapName: "5th Stump Outswing Trap", deliverySequence: "Bowl full on 5th stump swinging away to draw reckless drive.", phaseVulnerability: "Powerplay overs 1–5.", technicalFlaw: "Swings with massive bat arc without moving feet.", fieldInstruction: "Slips, gully, and deep cover." },
+      mlShapData: { dismissalProb: 8.3, expectedRuns: 1.4, shapAttributions: [{ feature: "outswing", impact: "+0.044", desc: "Outside edge" }], modelNotes: "Explosive opener." }
+    },
+    {
+      id: "player-ibrahim-zadran",
+      name: "Ibrahim Zadran",
+      country: "Afghanistan",
+      role: "Opening Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "none",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 94,
+      age: 24,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=IbrahimZadran&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 1420, avg: 48.9, sr: 81.2, centuries: 5 },
+      matchupScores: { paceHandling: 91, spinHandling: 90, bounceHandling: 93, deathExecution: 90 },
+      primaryStrength: "Afghanistan's first World Cup centurion, magnificent classical technique, unflappable anchor.",
+      vulnerability: "Sharp in-seam targeting front pad early; bouncers into ribs.",
+      theoryTips: { trapName: "Inswinging Nip-Backer Trap", deliverySequence: "Full length nipping inward to front pad.", phaseVulnerability: "Overs 1–10.", technicalFlaw: "Planting front foot across line.", fieldInstruction: "Slips and mid-on." },
+      mlShapData: { dismissalProb: 7.3, expectedRuns: 1.1, shapAttributions: [{ feature: "in_seam", impact: "+0.036", desc: "LBW" }], modelNotes: "Elite anchor." }
+    },
+    {
+      id: "player-azmatullah-omarzai",
+      name: "Azmatullah Omarzai",
+      country: "Afghanistan",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 26,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=AzmatullahOmarzai&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 710, wickets: 19, bat_avg: 41.7, bowl_econ: 5.6 },
+      matchupScores: { paceHandling: 90, spinHandling: 90, bounceHandling: 90, deathExecution: 87 },
+      primaryStrength: "Breakout World Cup star, 140 km/h outswing with new ball, towering sixes over long-on.",
+      vulnerability: "Bouncer at helmet; wide yorkers.",
+      theoryTips: { trapName: "Throat Bouncer", deliverySequence: "Fast bouncer directed at chest.", phaseVulnerability: "Middle/Death.", technicalFlaw: "Lifts head on pull.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.3, shapAttributions: [{ feature: "bouncer", impact: "+0.038", desc: "Catch" }], modelNotes: "Breakout all-rounder." }
+    },
+    {
+      id: "player-fazalhaq-farooqi",
+      name: "Fazalhaq Farooqi",
+      country: "Afghanistan",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_left_arm",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 93,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=FazalhaqFarooqi&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 38, avg: 32.5, econ: 5.15, fifers: 1 },
+      matchupScores: { paceHandling: 93, spinHandling: 91, bounceHandling: 91, deathExecution: 86 },
+      primaryStrength: "World-leading left-arm inswing into right handers, tournament top wicket-taker.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Fast Yorker", deliverySequence: "Yorker at middle.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-mohammad-nabi",
+      name: "Mohammad Nabi",
+      country: "Afghanistan",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "S-Tier (World Class)",
+      rating: 92,
+      age: 41,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MohammadNabi&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 3215, wickets: 162, bat_avg: 27.2, bowl_econ: 4.29 },
+      matchupScores: { paceHandling: 89, spinHandling: 90, bounceHandling: 91, deathExecution: 87 },
+      primaryStrength: "Father of Afghan cricket ('The President'), lethal flat off-spin, massive straight sixes.",
+      vulnerability: "Fast bouncers right at throat; wide off-cutters.",
+      theoryTips: { trapName: "Throat Bouncer", deliverySequence: "Fast bouncer at helmet line.", phaseVulnerability: "Death.", technicalFlaw: "Fends awkwardly.", fieldInstruction: "Deep square leg." },
+      mlShapData: { dismissalProb: 8.0, expectedRuns: 1.2, shapAttributions: [{ feature: "bouncer", impact: "+0.037", desc: "Catch" }], modelNotes: "Legend." }
+    },
+    {
+      id: "player-mujeeb-ur-rahman",
+      name: "Mujeeb Ur Rahman",
+      country: "Afghanistan",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "off_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 91,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=MujeebUrRahman&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 93, avg: 27.8, econ: 4.38, fifers: 1 },
+      matchupScores: { paceHandling: 89, spinHandling: 86, bounceHandling: 86, deathExecution: 84 },
+      primaryStrength: "Mystery carrom ball and googly with new ball in powerplay.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "Static.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.8, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-noor-ahmad",
+      name: "Noor Ahmad",
+      country: "Afghanistan",
+      role: "Spin Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "left_arm_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 90,
+      age: 21,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=NoorAhmad&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 15, avg: 32.0, econ: 5.45, fifers: 0 },
+      matchupScores: { paceHandling: 90, spinHandling: 85, bounceHandling: 85, deathExecution: 85 },
+      primaryStrength: "Extreme rapid left-arm wrist spin, vicious wrong-un.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-hashmatullah-shahidi",
+      name: "Hashmatullah Shahidi",
+      country: "Afghanistan",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 31,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=HashmatullahShahidi&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2040, avg: 33.4, sr: 68.2, centuries: 0 },
+      matchupScores: { paceHandling: 85, spinHandling: 86, bounceHandling: 86, deathExecution: 84 },
+      primaryStrength: "Courageous captain, patient accumulator, solid sweep.",
+      vulnerability: "In-nipping pace deliveries into pads; sharp bouncer.",
+      theoryTips: { trapName: "Full In-Seamer", deliverySequence: "Full seam nipping inward.", phaseVulnerability: "Middle.", technicalFlaw: "Pad in line.", fieldInstruction: "Mid-on." },
+      mlShapData: { dismissalProb: 7.5, expectedRuns: 1.1, shapAttributions: [{ feature: "in_seam", impact: "+0.033", desc: "LBW" }], modelNotes: "Captain." }
+    },
+    {
+      id: "player-rahmat-shah",
+      name: "Rahmat Shah",
+      country: "Afghanistan",
+      role: "Top-Order Batsman",
+      type: "batsman",
+      battingHand: "RHB",
+      bowlingStyle: "leg_spin",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=RahmatShah&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 3610, avg: 36.8, sr: 70.4, centuries: 5 },
+      matchupScores: { paceHandling: 87, spinHandling: 83, bounceHandling: 84, deathExecution: 86 },
+      primaryStrength: "Classical No. 3 rock, solid defense, excellent strike rotation.",
+      vulnerability: "5th stump outswinger.",
+      theoryTips: { trapName: "Channel Outswinger", deliverySequence: "Good length outswing.", phaseVulnerability: "Overs 1–15.", technicalFlaw: "Pushes at ball.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.4, expectedRuns: 1.1, shapAttributions: [{ feature: "outswing", impact: "+0.032", desc: "Edge" }], modelNotes: "Anchor." }
+    },
+    {
+      id: "player-naveen-ul-haq",
+      name: "Naveen-ul-Haq",
+      country: "Afghanistan",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 89,
+      age: 27,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=NaveenulHaq&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 22, avg: 32.1, econ: 5.78, fifers: 0 },
+      matchupScores: { paceHandling: 86, spinHandling: 86, bounceHandling: 88, deathExecution: 86 },
+      primaryStrength: "Sharp slower balls, back-of-the-hand cutters, fierce competitiveness.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Straight Yorker", deliverySequence: "Yorker.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 11.5, expectedRuns: 0.6, shapAttributions: [{ feature: "yorker", impact: "+0.048", desc: "Bowled" }], modelNotes: "Tail." }
+    },
+    {
+      id: "player-najibullah-zadran",
+      name: "Najibullah Zadran",
+      country: "Afghanistan",
+      role: "Middle-Order Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 33,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=NajibullahZadran&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 2060, avg: 29.8, sr: 89.4, centuries: 1 },
+      matchupScores: { paceHandling: 84, spinHandling: 83, bounceHandling: 86, deathExecution: 81 },
+      primaryStrength: "Brutal left-handed pull shot, middle-overs boundary acceleration.",
+      vulnerability: "Off-spin turning away; sharp bouncer.",
+      theoryTips: { trapName: "Off-Spin Turn Away", deliverySequence: "Off-spin turning away from left-hander.", phaseVulnerability: "Middle.", technicalFlaw: "Reaches recklessly.", fieldInstruction: "Deep point." },
+      mlShapData: { dismissalProb: 8.2, expectedRuns: 1.3, shapAttributions: [{ feature: "spin_away", impact: "+0.038", desc: "Catch" }], modelNotes: "Finisher." }
+    },
+    {
+      id: "player-gulbadin-naib",
+      name: "Gulbadin Naib",
+      country: "Afghanistan",
+      role: "All-Rounder",
+      type: "all_rounder",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "A-Tier (Match Winner)",
+      rating: 88,
+      age: 35,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=GulbadinNaib&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "allrounder", runs: 1210, wickets: 73, bat_avg: 21.6, bowl_econ: 5.4 },
+      matchupScores: { paceHandling: 87, spinHandling: 82, bounceHandling: 83, deathExecution: 82 },
+      primaryStrength: "Heroic spell vs Australia (4/20), muscular lower-order hitting.",
+      vulnerability: "Fast yorkers.",
+      theoryTips: { trapName: "Yorker at Toes", deliverySequence: "Yorker.", phaseVulnerability: "Death.", technicalFlaw: "Swings across.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 8.5, expectedRuns: 1.2, shapAttributions: [{ feature: "yorker", impact: "+0.04", desc: "Bowled" }], modelNotes: "Match-winner." }
+    },
+    {
+      id: "player-ikram-alikhil",
+      name: "Ikram Alikhil",
+      country: "Afghanistan",
+      role: "Wicketkeeper-Batsman",
+      type: "batsman",
+      battingHand: "LHB",
+      bowlingStyle: "none",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 85,
+      age: 25,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=IkramAlikhil&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "batsman", runs: 380, avg: 27.1, sr: 72.5, centuries: 0 },
+      matchupScores: { paceHandling: 82, spinHandling: 81, bounceHandling: 83, deathExecution: 80 },
+      primaryStrength: "Gritty middle-order anchor, neat wicketkeeping.",
+      vulnerability: "Fast rising bouncer.",
+      theoryTips: { trapName: "Bouncer", deliverySequence: "Bouncer at body.", phaseVulnerability: "Middle.", technicalFlaw: "Awkward fend.", fieldInstruction: "Slips." },
+      mlShapData: { dismissalProb: 7.9, expectedRuns: 1.1, shapAttributions: [{ feature: "bouncer", impact: "+0.033", desc: "Catch" }], modelNotes: "Keeper." }
+    },
+    {
+      id: "player-naveed-zadran",
+      name: "Naveed Zadran",
+      country: "Afghanistan",
+      role: "Fast Bowler",
+      type: "bowler",
+      battingHand: "RHB",
+      bowlingStyle: "pace_right_arm",
+      scoutGrade: "B-Tier (Tactical Specialist)",
+      rating: 85,
+      age: 21,
+      photo: "https://api.dicebear.com/7.x/initials/svg?seed=NaveedZadran&backgroundColor=0f2b23,111a17,04140c&textColor=00E676",
+      stats: { type: "bowler", wickets: 8, avg: 25.0, econ: 5.1, fifers: 0 },
+      matchupScores: { paceHandling: 85, spinHandling: 79, bounceHandling: 81, deathExecution: 82 },
+      primaryStrength: "Young fast seamer with lively pace.",
+      vulnerability: "Tailender.",
+      theoryTips: { trapName: "Yorker", deliverySequence: "Yorker at off stump.", phaseVulnerability: "Tail.", technicalFlaw: "No defense.", fieldInstruction: "Ring." },
+      mlShapData: { dismissalProb: 12.0, expectedRuns: 0.5, shapAttributions: [{ feature: "yorker", impact: "+0.05", desc: "Bowled" }], modelNotes: "Tail." }
+    }
+  ]
+};
+
+// Helper utilities
+function getEligibleCountries() {
+  return ELIGIBLE_COUNTRIES;
+}
+
+function getPlayersByCountry(country) {
+  return PLAYERS_DATABASE[country] || [];
+}
+
+function getPlayerById(id) {
+  for (const country in PLAYERS_DATABASE) {
+    const p = PLAYERS_DATABASE[country].find(x => x.id === id);
+    if (p) return p;
+  }
+  return null;
+}
+
+function getAllPlayers() {
+  const all = [];
+  for (const country in PLAYERS_DATABASE) {
+    all.push(...PLAYERS_DATABASE[country]);
+  }
+  return all;
+}
+
+
+// Authentic International Jersey Color Themes (World Cup 2027 Editions)
+const TEAM_JERSEY_THEMES = {
+  "India": {
+    primary: "#1D4ED8", // Royal Indian Blue
+    secondary: "#FF6F00", // Saffron / Orange
+    gradient: "linear-gradient(90deg, #1D4ED8 0%, #EA580C 100%)",
+    glow: "rgba(29, 78, 216, 0.5)",
+    text: "#60A5FA",
+    border: "#2563EB",
+    badgeBg: "rgba(29, 78, 216, 0.18)",
+    badgeBorder: "rgba(234, 88, 12, 0.6)"
+  },
+  "Australia": {
+    primary: "#FACC15", // Canary Yellow / Gold
+    secondary: "#065F46", // Aussie Dark Forest Green
+    gradient: "linear-gradient(90deg, #FACC15 0%, #047857 100%)",
+    glow: "rgba(250, 204, 21, 0.5)",
+    text: "#FDE047",
+    border: "#EAB308",
+    badgeBg: "rgba(250, 204, 21, 0.15)",
+    badgeBorder: "rgba(250, 204, 21, 0.5)"
+  },
+  "England": {
+    primary: "#1E3A8A", // Dark Navy Blue
+    secondary: "#DC2626", // Lions Red
+    gradient: "linear-gradient(90deg, #1E3A8A 0%, #B91C1C 100%)",
+    glow: "rgba(30, 58, 138, 0.5)",
+    text: "#93C5FD",
+    border: "#2563EB",
+    badgeBg: "rgba(30, 58, 138, 0.2)",
+    badgeBorder: "rgba(220, 38, 38, 0.5)"
+  },
+  "South Africa": {
+    primary: "#047857", // Proteas Emerald Green
+    secondary: "#FBBF24", // Proteas Gold
+    gradient: "linear-gradient(90deg, #047857 0%, #D97706 100%)",
+    glow: "rgba(4, 120, 87, 0.5)",
+    text: "#34D399",
+    border: "#059669",
+    badgeBg: "rgba(4, 120, 87, 0.2)",
+    badgeBorder: "rgba(251, 191, 36, 0.5)"
+  },
+  "New Zealand": {
+    primary: "#3F3F46", // Black Caps Charcoal / Black
+    secondary: "#E4E4E7", // Silver Fern White
+    gradient: "linear-gradient(90deg, #18181B 0%, #52525B 100%)",
+    glow: "rgba(228, 228, 231, 0.35)",
+    text: "#F4F4F5",
+    border: "#71717A",
+    badgeBg: "rgba(255, 255, 255, 0.1)",
+    badgeBorder: "rgba(255, 255, 255, 0.4)"
+  },
+  "Pakistan": {
+    primary: "#064E3B", // Star Deep Green
+    secondary: "#FDE047", // Star Gold
+    gradient: "linear-gradient(90deg, #064E3B 0%, #10B981 100%)",
+    glow: "rgba(16, 185, 129, 0.45)",
+    text: "#6EE7B7",
+    border: "#059669",
+    badgeBg: "rgba(6, 78, 59, 0.25)",
+    badgeBorder: "rgba(52, 211, 153, 0.5)"
+  },
+  "West Indies": {
+    primary: "#881337", // Windies Maroon
+    secondary: "#F59E0B", // Palm Gold
+    gradient: "linear-gradient(90deg, #881337 0%, #D97706 100%)",
+    glow: "rgba(136, 19, 55, 0.5)",
+    text: "#FB7185",
+    border: "#9F1239",
+    badgeBg: "rgba(136, 19, 55, 0.2)",
+    badgeBorder: "rgba(245, 158, 11, 0.5)"
+  },
+  "Sri Lanka": {
+    primary: "#1E40AF", // Lion Royal Blue
+    secondary: "#F59E0B", // Lion Golden Yellow
+    gradient: "linear-gradient(90deg, #1E40AF 0%, #D97706 100%)",
+    glow: "rgba(30, 64, 175, 0.5)",
+    text: "#93C5FD",
+    border: "#2563EB",
+    badgeBg: "rgba(30, 64, 175, 0.2)",
+    badgeBorder: "rgba(245, 158, 11, 0.5)"
+  },
+  "Bangladesh": {
+    primary: "#064E3B", // Bengal Tiger Green
+    secondary: "#DC2626", // Red Sun
+    gradient: "linear-gradient(90deg, #064E3B 0%, #B91C1C 100%)",
+    glow: "rgba(220, 38, 38, 0.45)",
+    text: "#34D399",
+    border: "#059669",
+    badgeBg: "rgba(6, 78, 59, 0.25)",
+    badgeBorder: "rgba(220, 38, 38, 0.5)"
+  },
+  "Afghanistan": {
+    primary: "#2563EB", // Afghan Royal Blue
+    secondary: "#DC2626", // Red
+    gradient: "linear-gradient(90deg, #1D4ED8 0%, #DC2626 100%)",
+    glow: "rgba(37, 99, 235, 0.5)",
+    text: "#60A5FA",
+    border: "#3B82F6",
+    badgeBg: "rgba(37, 99, 235, 0.2)",
+    badgeBorder: "rgba(220, 38, 38, 0.5)"
+  }
+};
+
+function getJerseyTheme(country) {
+  return TEAM_JERSEY_THEMES[country] || {
+    primary: "#00E676",
+    secondary: "#10B981",
+    gradient: "linear-gradient(90deg, #00E676 0%, #10B981 100%)",
+    glow: "rgba(0, 230, 118, 0.4)",
+    text: "#34D399",
+    border: "#00E676",
+    badgeBg: "rgba(0, 230, 118, 0.15)",
+    badgeBorder: "rgba(0, 230, 118, 0.4)"
+  };
+}
+
+window.CricXData = {
+  TEAM_JERSEY_THEMES,
+  getJerseyTheme,
+  ELIGIBLE_COUNTRIES,
+  PLAYERS_DATABASE,
+  getEligibleCountries,
+  getPlayersByCountry,
+  getPlayerById,
+  getAllPlayers
+};
+
+
+// =========================================================================
+// CRICXAI MATCHUP SIMULATION & AI PLAYING XI PREDICTION ENGINE
+// =========================================================================
+const CricXMatchup = {
+  // Predict the tactically optimal Playing XI from a 15-man squad
+  predictStrongestXI(teamCountry, opponentCountry, pitchCondition = "highveld_bounce") {
+    const squad = CricXData.getPlayersByCountry(teamCountry);
+    if (!squad || squad.length === 0) return { playingXI: [], bench: [] };
+
+    // 1. Mandatory: Pick primary wicketkeeper (highest rating with keeper role or tagged)
+    const keepers = squad.filter(p => p.role.toLowerCase().includes("wicketkeeper") || p.role.toLowerCase().includes("(wk)"));
+    let chosenKeeper = keepers.sort((a, b) => b.rating - a.rating)[0];
+    if (!chosenKeeper) {
+      chosenKeeper = squad[4] || squad[0];
+    }
+
+    // Remaining candidates
+    const pool = squad.filter(p => p.id !== chosenKeeper.id);
+
+    // Sort by rating and tactical suitability for pitchCondition & opponent
+    const scorePlayer = (p) => {
+      let score = p.rating;
+      const opp = (opponentCountry || "").toLowerCase();
+      // Highveld / Wanderers / Centurion: boost express pace and bounce handling
+      if (pitchCondition === "highveld_bounce") {
+        if (p.type === "bowler" && p.bowlingStyle.includes("pace")) score += 4;
+        if (p.matchupScores && p.matchupScores.bounceHandling > 90) score += 3;
+      } else if (pitchCondition === "coastal_swing") {
+        if (p.bowlingStyle.includes("pace")) score += 3;
+        if (p.battingHand === "LHB") score += 2;
+      } else if (pitchCondition === "inland_spin") {
+        if (p.type === "bowler" && !p.bowlingStyle.includes("pace")) score += 4;
+      }
+
+      // Opponent-specific adjustments
+      if (opp === "australia" || opp === "england") {
+        // Australia & England vulnerable to wrist spin in middle overs
+        if (p.role.toLowerCase().includes("wrist") || p.role.toLowerCase().includes("leg-spin") || p.name.includes("Kuldeep") || p.name.includes("Zampa") || p.name.includes("Rashid")) {
+          score += 5;
+        }
+      } else if (opp === "india" || opp === "pakistan") {
+        // High-pace left-arm swing causes early trouble
+        if (p.bowlingStyle.includes("left_arm") && p.bowlingStyle.includes("pace")) {
+          score += 4;
+        }
+      }
+
+      return score;
+    };
+
+    // Separate by type
+    const pureBatsmen = pool.filter(p => p.type === "batsman").sort((a, b) => scorePlayer(b) - scorePlayer(a));
+    const allRounders = pool.filter(p => p.type === "allrounder").sort((a, b) => scorePlayer(b) - scorePlayer(a));
+    const bowlers = pool.filter(p => p.type === "bowler").sort((a, b) => scorePlayer(b) - scorePlayer(a));
+
+    // Construct balanced ODI 11:
+    // - 1 Keeper (chosenKeeper)
+    // - 4 Pure Batsmen
+    // - 2 All-Rounders
+    // - 4 Frontline Bowlers
+    const xi = [chosenKeeper];
+    pureBatsmen.slice(0, 4).forEach(b => xi.push(b));
+    allRounders.slice(0, 2).forEach(ar => xi.push(ar));
+    bowlers.slice(0, 4).forEach(bw => xi.push(bw));
+
+    // If still short of 11, fill from highest remaining
+    const currentIds = new Set(xi.map(p => p.id));
+    const remaining = pool.filter(p => !currentIds.has(p.id)).sort((a, b) => scorePlayer(b) - scorePlayer(a));
+    while (xi.length < 11 && remaining.length > 0) {
+      xi.push(remaining.shift());
+    }
+
+    // Remaining 4 form the Bench
+    const xiIds = new Set(xi.map(p => p.id));
+    const bench = squad.filter(p => !xiIds.has(p.id));
+
+    return { playingXI: xi, bench: bench };
+  },
+
+  // Calculate team strengths across 4 condition dimensions
+  calculateTeamStrengths(playingXI, pitchCondition = "highveld_bounce") {
+    if (!playingXI || playingXI.length === 0) {
+      return { paceStrength: 50, spinStrength: 50, battingDepth: 50, deathPower: 50, overall: 50 };
+    }
+
+    let paceSum = 0, paceCount = 0;
+    let spinSum = 0, spinCount = 0;
+    let batSum = 0, deathSum = 0;
+
+    playingXI.forEach(p => {
+      const r = p.rating || 80;
+      if (p.type === "bowler" || p.type === "allrounder") {
+        if (p.bowlingStyle && p.bowlingStyle.includes("pace")) {
+          paceSum += r;
+          paceCount++;
+        } else {
+          spinSum += r;
+          spinCount++;
+        }
+      }
+      if (p.type === "batsman" || p.type === "allrounder") {
+        batSum += r;
+      }
+      if (p.matchupScores) {
+        deathSum += p.matchupScores.deathExecution;
+      } else {
+        deathSum += r;
+      }
+    });
+
+    const paceStrength = paceCount > 0 ? Math.round(paceSum / paceCount) : 70;
+    const spinStrength = spinCount > 0 ? Math.round(spinSum / spinCount) : 68;
+    const battingDepth = Math.round(batSum / Math.max(1, playingXI.filter(p => p.type !== "bowler").length));
+    const deathPower = Math.round(deathSum / playingXI.length);
+
+    let conditionBonus = 0;
+    if (pitchCondition === "highveld_bounce") conditionBonus = (paceStrength * 0.08);
+    else if (pitchCondition === "inland_spin") conditionBonus = (spinStrength * 0.08);
+
+    const overall = Math.min(99, Math.round((paceStrength * 0.3 + spinStrength * 0.2 + battingDepth * 0.3 + deathPower * 0.2) + conditionBonus));
+
+    return { paceStrength, spinStrength, battingDepth, deathPower, overall };
+  },
+
+  // Calculate Win Probability between Team A and Team B
+  calculateMatchupWinProb(teamAXI, teamBXI, pitchCondition = "highveld_bounce") {
+    const stA = this.calculateTeamStrengths(teamAXI, pitchCondition);
+    const stB = this.calculateTeamStrengths(teamBXI, pitchCondition);
+
+    // Logistic differential
+    const diff = (stA.overall - stB.overall);
+    const k = 0.095;
+    const probA = 1 / (1 + Math.exp(-k * diff));
+    const winPctA = Math.max(15, Math.min(85, Math.round(probA * 1000) / 10));
+    const winPctB = Math.round((100 - winPctA) * 10) / 10;
+
+    return {
+      winProbA: winPctA,
+      winProbB: winPctB,
+      strengthsA: stA,
+      strengthsB: stB
+    };
+  },
+
+  // SHAP-Style Swap Recommendations for Bench Players
+  getShapSwapRecommendations(teamCountry, currentXI, opponentXI, benchPlayers, pitchCondition = "highveld_bounce") {
+    const recommendations = [];
+    const baseMatchup = this.calculateMatchupWinProb(currentXI, opponentXI, pitchCondition);
+    const baseWinProb = baseMatchup.winProbA;
+
+    benchPlayers.forEach(benchPlayer => {
+      // Find eligible swap candidates in currentXI of compatible role
+      currentXI.forEach(xiPlayer => {
+        const isKeeper = xiPlayer.role.toLowerCase().includes("keeper") || xiPlayer.role.toLowerCase().includes("(wk)");
+        const isBenchKeeper = benchPlayer.role.toLowerCase().includes("keeper") || benchPlayer.role.toLowerCase().includes("(wk)");
+        if (isKeeper && !isBenchKeeper) return;
+
+        // Test swapped XI
+        const testXI = currentXI.map(p => p.id === xiPlayer.id ? benchPlayer : p);
+        const testMatchup = this.calculateMatchupWinProb(testXI, opponentXI, pitchCondition);
+        const delta = Math.round((testMatchup.winProbA - baseWinProb) * 10) / 10;
+
+        let tacticalReason = "";
+        if (benchPlayer.type === "bowler" && benchPlayer.bowlingStyle.includes("spin")) {
+          tacticalReason = `Targets opponent's middle-order vulnerability to wrist spin in South African conditions.`;
+        } else if (benchPlayer.type === "bowler" && benchPlayer.bowlingStyle.includes("pace")) {
+          tacticalReason = `Exploits Highveld steep bounce with 140+ km/h hit-the-deck bouncers.`;
+        } else if (benchPlayer.type === "batsman") {
+          tacticalReason = `Enhances back-foot punch and counter-attacking against opponent's express pace attack.`;
+        } else {
+          tacticalReason = `Boosts lower-order batting depth and provides 6th bowling balance.`;
+        }
+
+        recommendations.push({
+          playerIn: benchPlayer,
+          playerOut: xiPlayer,
+          deltaWinProb: delta,
+          deltaText: (delta >= 0 ? "+" : "") + delta + "% Win Prob",
+          reason: tacticalReason,
+          impactTier: delta >= 1.5 ? "high" : delta >= 0 ? "positive" : "negative"
+        });
+      });
+    });
+
+    recommendations.sort((a, b) => b.deltaWinProb - a.deltaWinProb);
+    return recommendations.slice(0, 4);
+  }
+};
+
+window.CricXMatchup = CricXMatchup;
+
+
+// =========================================================================
+// CRICXAI PLAYER VS PLAYER AI MATCHING & HEAD-TO-HEAD COMPARISON ENGINE
+// =========================================================================
+const CricXPvP = {
+  comparePlayers(idA, idB, venueCondition = "highveld_bounce") {
+    const pA = CricXData.getPlayerById(idA);
+    const pB = CricXData.getPlayerById(idB);
+    if (!pA || !pB) return null;
+
+    const themeA = CricXData.getJerseyTheme(pA.country);
+    const themeB = CricXData.getJerseyTheme(pB.country);
+
+    // Determine battle type
+    const isPureBatA = pA.type === "batsman";
+    const isPureBatB = pB.type === "batsman";
+    const isPureBowlA = pA.type === "bowler";
+    const isPureBowlB = pB.type === "bowler";
+
+    let battleType = "bat_vs_bat";
+    if ((pA.type === "batsman" && pB.type === "bowler") || (pA.type === "bowler" && pB.type === "batsman")) {
+      battleType = "bat_vs_bowl";
+    } else if (pA.type === "bowler" && pB.type === "bowler") {
+      battleType = "bowl_vs_bowl";
+    } else if (pA.type === "allrounder" && pB.type === "bowler") {
+      battleType = "bat_vs_bowl";
+    } else if (pA.type === "bowler" && pB.type === "allrounder") {
+      battleType = "bat_vs_bowl";
+    }
+
+    let radarMetrics = [];
+    let dominanceA = 50;
+    let dominanceB = 50;
+    let verdict = "";
+    let tacticalNarrative = "";
+    let shapAdvantages = [];
+
+    // CASE 1: BATSMAN VS BOWLER
+    if (battleType === "bat_vs_bowl") {
+      const bat = pA.type === "batsman" || (pA.type === "allrounder" && pB.type === "bowler") ? pA : pB;
+      const bowl = bat.id === pA.id ? pB : pA;
+      const batIsA = bat.id === pA.id;
+
+      const batRating = bat.rating || 88;
+      const bowlRating = bowl.rating || 88;
+
+      // Condition modifiers
+      let conditionEdge = 0;
+      if (venueCondition === "highveld_bounce") {
+        if (bowl.bowlingStyle.includes("pace")) conditionEdge += 3; // Bowler bounce edge
+        if (bat.matchupScores && bat.matchupScores.bounceHandling > 92) conditionEdge -= 2; // Batsman handles bounce
+      } else if (venueCondition === "coastal_swing") {
+        if (bowl.bowlingStyle.includes("left_arm") || bowl.bowlingStyle.includes("pace")) conditionEdge += 4;
+      }
+
+      // Check if bowler exploits batsman's specific vulnerability
+      let trapBonus = 0;
+      if (bowl.bowlingStyle.includes("left_arm") && bat.vulnerability.toLowerCase().includes("left-arm")) {
+        trapBonus += 5;
+      }
+      if (bowl.bowlingStyle.includes("pace") && bat.vulnerability.toLowerCase().includes("5th-stump")) {
+        trapBonus += 4;
+      }
+      if (!bowl.bowlingStyle.includes("pace") && bat.vulnerability.toLowerCase().includes("spin")) {
+        trapBonus += 5;
+      }
+
+      const netBowlScore = bowlRating + conditionEdge + trapBonus;
+      const diff = (batRating - netBowlScore);
+      const batOdds = Math.max(25, Math.min(75, Math.round((50 + diff * 1.5) * 10) / 10));
+      const bowlOdds = Math.round((100 - batOdds) * 10) / 10;
+
+      dominanceA = batIsA ? batOdds : bowlOdds;
+      dominanceB = batIsA ? bowlOdds : batOdds;
+
+      radarMetrics = [
+        { label: "Overall Tactical Caliber", valA: pA.rating, valB: pB.rating },
+        { label: "Powerplay Standoff (Ov 1-10)", valA: batIsA ? 88 : 94, valB: batIsA ? 94 : 88 },
+        { label: "High-Bounce Vulnerability Index", valA: batIsA ? (bat.matchupScores?.bounceHandling || 85) : 92, valB: batIsA ? 92 : (bat.matchupScores?.bounceHandling || 85) },
+        { label: "Death Overs Collision (Ov 41-50)", valA: pA.matchupScores?.deathExecution || 88, valB: pB.matchupScores?.deathExecution || 88 },
+        { label: "Seam / Spin Deviation Resistance", valA: batIsA ? 86 : 95, valB: batIsA ? 95 : 86 },
+        { label: "Match-Pressure Composure", valA: pA.rating > 92 ? 96 : 89, valB: pB.rating > 92 ? 96 : 89 }
+      ];
+
+      verdict = batOdds >= 52
+        ? `${bat.name} holds the upper hand (+${(batOdds - bowlOdds).toFixed(1)}% Edge) through back-foot boundary prowess.`
+        : `${bowl.name} holds the tactical trap edge (+${(bowlOdds - batOdds).toFixed(1)}% Danger) by exploiting ${bat.name}'s documented dismissal corridor.`;
+
+      tacticalNarrative = `
+        <b>Head-to-Head Duel:</b> When <b>${bowl.name}</b> (${bowl.country}) bowls to <b>${bat.name}</b> (${bat.country}), the key battle revolves around the <b>${bowl.bowlingStyle.replace(/_/g, " ")}</b> attack against ${bat.battingHand} stance.
+        <br><br>
+        <b>Tactical Trap:</b> ${bowl.name} will target ${bat.vulnerability}. In South African conditions (${venueCondition.replace(/_/g, " ")}), the steep bounce elevates the outside edge and caught-behind probability to <b>${(bowlOdds * 0.12).toFixed(1)}% per ball</b>.
+        <br><br>
+        <b>Batsman's Counter:</b> ${bat.name}'s signature strength (${bat.primaryStrength}) allows scoring off back-foot cuts and punches if ${bowl.name} misses the ideal 6m-8m length channel.
+      `;
+
+      shapAdvantages = [
+        { player: bowl.name, delta: `+${(trapBonus * 0.8).toFixed(1)}% P(Wicket)`, desc: `Vulnerability match: targets ${bat.name}'s documented weakness.` },
+        { player: bat.name, delta: `+${(batRating * 0.05).toFixed(1)} Runs/Ov`, desc: `Career pedigree: averages ${bat.stats?.avg || 45.0} against top-tier attacks.` },
+        { player: bowl.name, delta: `+${(conditionEdge * 0.9).toFixed(1)}% Seam Deviation`, desc: `South African ${venueCondition.replace(/_/g, " ")} elevates bounce & carry.` }
+      ];
+
+    // CASE 2: BATSMAN VS BATSMAN
+    } else if (battleType === "bat_vs_bat") {
+      const avgA = pA.stats?.avg || 45;
+      const avgB = pB.stats?.avg || 45;
+      const srA = pA.stats?.sr || 90;
+      const srB = pB.stats?.sr || 90;
+      const runsA = pA.stats?.runs || 2000;
+      const runsB = pB.stats?.runs || 2000;
+
+      const scoreA = pA.rating * 0.5 + (avgA * 0.5) + (srA * 0.2);
+      const scoreB = pB.rating * 0.5 + (avgB * 0.5) + (srB * 0.2);
+
+      const total = scoreA + scoreB;
+      dominanceA = Math.round((scoreA / total) * 1000) / 10;
+      dominanceB = Math.round((100 - dominanceA) * 10) / 10;
+
+      radarMetrics = [
+        { label: "Batting Consistency (ODI Avg)", valA: Math.min(99, Math.round(avgA * 1.5)), valB: Math.min(99, Math.round(avgB * 1.5)) },
+        { label: "Boundary Strike Acceleration (SR)", valA: Math.min(99, Math.round(srA * 0.85)), valB: Math.min(99, Math.round(srB * 0.85)) },
+        { label: "High-Bounce & Pull Mastery", valA: pA.matchupScores?.bounceHandling || 90, valB: pB.matchupScores?.bounceHandling || 90 },
+        { label: "Chasing in High-Pressure Games", valA: pA.rating > 94 ? 98 : 88, valB: pB.rating > 94 ? 98 : 88 },
+        { label: "Middle-Overs Spin Neutralization", valA: pA.matchupScores?.spinHandling || 91, valB: pB.matchupScores?.spinHandling || 91 },
+        { label: "Death Overs Finishing Velocity", valA: pA.matchupScores?.deathExecution || 88, valB: pB.matchupScores?.deathExecution || 88 }
+      ];
+
+      const winner = dominanceA >= dominanceB ? pA : pB;
+      const diff = Math.abs(dominanceA - dominanceB).toFixed(1);
+      verdict = `${winner.name} holds the composite statistical edge (+${diff}%) based on multi-condition consistency and scoring rate.`;
+
+      tacticalNarrative = `
+        <b>Top-Order Benchmark:</b> Comparing <b>${pA.name}</b> (${pA.country} &middot; Avg ${avgA}, SR ${srA}) against <b>${pB.name}</b> (${pB.country} &middot; Avg ${avgB}, SR ${srB}).
+        <br><br>
+        <b>Style Contrast:</b> ${pA.name} relies on ${pA.primaryStrength}, whereas ${pB.name} counters with ${pB.primaryStrength}.
+        <br><br>
+        <b>2027 South African Conditions Impact:</b> On true, hard bouncy pitches, ${pA.matchupScores?.bounceHandling > pB.matchupScores?.bounceHandling ? pA.name : pB.name} possesses higher back-foot efficiency, reducing edge-to-slip dismissal odds.
+      `;
+
+      shapAdvantages = [
+        { player: avgA >= avgB ? pA.name : pB.name, delta: `+${Math.abs(avgA - avgB).toFixed(1)} Avg Diff`, desc: `Superior run accumulation and innings longevity.` },
+        { player: srA >= srB ? pA.name : pB.name, delta: `+${Math.abs(srA - srB).toFixed(1)} SR Diff`, desc: `Higher power-hitting and boundary strike rate.` },
+        { player: runsA >= runsB ? pA.name : pB.name, delta: `${Math.max(runsA, runsB).toLocaleString()} ODI Runs`, desc: `Vast international tournament experience.` }
+      ];
+
+    // CASE 3: BOWLER VS BOWLER
+    } else {
+      const wktsA = pA.stats?.wickets || 80;
+      const wktsB = pB.stats?.wickets || 80;
+      const econA = pA.stats?.econ || 5.2;
+      const econB = pB.stats?.econ || 5.2;
+      const avgA = pA.stats?.avg || 26.0;
+      const avgB = pB.stats?.avg || 26.0;
+
+      const scoreA = pA.rating * 0.6 + ((35 - avgA) * 1.5) + ((7.0 - econA) * 10);
+      const scoreB = pB.rating * 0.6 + ((35 - avgB) * 1.5) + ((7.0 - econB) * 10);
+
+      const total = scoreA + scoreB;
+      dominanceA = Math.round((scoreA / total) * 1000) / 10;
+      dominanceB = Math.round((100 - dominanceA) * 10) / 10;
+
+      radarMetrics = [
+        { label: "Wicket Strike Potency (Avg)", valA: Math.min(99, Math.round((35 - avgA) * 4.5)), valB: Math.min(99, Math.round((35 - avgB) * 4.5)) },
+        { label: "Economy Choke Rate", valA: Math.min(99, Math.round((7.5 - econA) * 20)), valB: Math.min(99, Math.round((7.5 - econB) * 20)) },
+        { label: "Seam / Swing Lateral Deviation", valA: pA.matchupScores?.paceHandling || 92, valB: pB.matchupScores?.paceHandling || 92 },
+        { label: "Death Overs Yorker Accuracy", valA: pA.matchupScores?.deathExecution || 94, valB: pB.matchupScores?.deathExecution || 94 },
+        { label: "High-Bounce Hit-The-Deck Rating", valA: pA.matchupScores?.bounceHandling || 93, valB: pB.matchupScores?.bounceHandling || 93 },
+        { label: "Powerplay Wicket Strike Rate", valA: pA.rating > 94 ? 97 : 89, valB: pB.rating > 94 ? 97 : 89 }
+      ];
+
+      const winner = dominanceA >= dominanceB ? pA : pB;
+      const diff = Math.abs(dominanceA - dominanceB).toFixed(1);
+      verdict = `${winner.name} holds the bowling supremacy edge (+${diff}%) through tighter economy and strike penetration.`;
+
+      tacticalNarrative = `
+        <b>Spearhead Standoff:</b> <b>${pA.name}</b> (${pA.country} &middot; ${pA.bowlingStyle.replace(/_/g, " ")}) vs <b>${pB.name}</b> (${pB.country} &middot; ${pB.bowlingStyle.replace(/_/g, " ")}).
+        <br><br>
+        <b>Weapons:</b> ${pA.name}'s arsenal centers around ${pA.primaryStrength}; ${pB.name} counters with ${pB.primaryStrength}.
+        <br><br>
+        <b>South Africa Conditions Suitability:</b> At venues like Wanderers and Centurion, ${pA.rating > pB.rating ? pA.name : pB.name} extracts sharper bounce off an 8-meter length, proving more difficult to pull.
+      `;
+
+      shapAdvantages = [
+        { player: econA <= econB ? pA.name : pB.name, delta: `Econ ${Math.min(econA, econB)}`, desc: `Superior run containment under pressure.` },
+        { player: avgA <= avgB ? pA.name : pB.name, delta: `Avg ${Math.min(avgA, avgB)}`, desc: `Deadlier wicket-taking frequency per over.` },
+        { player: wktsA >= wktsB ? pA.name : pB.name, delta: `${Math.max(wktsA, wktsB)} ODI Wkts`, desc: `Proven international pedigree in global tournaments.` }
+      ];
+    }
+
+    return {
+      playerA: pA,
+      playerB: pB,
+      themeA,
+      themeB,
+      battleType,
+      dominanceA,
+      dominanceB,
+      radarMetrics,
+      verdict,
+      tacticalNarrative,
+      shapAdvantages
+    };
+  }
+};
+
+window.CricXPvP = CricXPvP;
+
+
+// =========================================================================
+// BATSMAN VS BOWLER TACTICAL DISMISSAL PRESCRIPTOR ENGINE
+// Determines the exact ball to bowl to dismiss the batsman based on previous data
+// =========================================================================
+CricXPvP.prescribeDismissalBall = function(batsmanId, bowlerId, pitchCondition = "highveld_bounce", matchPhase = "middle") {
+  const bat = CricXData.getPlayerById(batsmanId);
+  const bowl = CricXData.getPlayerById(bowlerId);
+  if (!bat || !bowl) return null;
+
+  const themeBat = CricXData.getJerseyTheme(bat.country);
+  const themeBowl = CricXData.getJerseyTheme(bowl.country);
+
+  const isLeftArmPace = bowl.bowlingStyle && bowl.bowlingStyle.includes("left_arm") && bowl.bowlingStyle.includes("pace");
+  const isRightArmPace = bowl.bowlingStyle && bowl.bowlingStyle.includes("pace_right_arm");
+  const isPace = isLeftArmPace || isRightArmPace;
+  const isSpinner = !isPace;
+  const isLHB = bat.battingHand === "LHB";
+
+  // Base recommendation variables
+  let recommendedLength = "good";
+  let recommendedLine = "outside_off";
+  let deliveryTitle = "Good Length, 5th Stump Channel";
+  let seamSpeed = "138.5 km/h · Seam Up";
+  let dismissalMode = "Caught behind / 1st slip";
+  let fieldPreset = "fourth_stump_catchers";
+  let baseProb = 0.055;
+  let expRuns = 1.1;
+
+  // 1. Evaluate Batsman Vulnerability + Bowler Arsenal + Pitch Condition
+  const batVuln = (bat.vulnerability || "").toLowerCase();
+  const bowlStyle = (bowl.bowlingStyle || "").toLowerCase();
+
+  // Condition 1: Death overs or Yorker specialist
+  if (matchPhase === "death" || (isPace && batVuln.includes("yorker"))) {
+    recommendedLength = "yorker";
+    recommendedLine = isLHB ? "outside_off" : "off_stump";
+    deliveryTitle = isLHB ? "Laser Yorker, Outside Off Stump" : "Inswinging Toe-Crusher Yorker, Base of Off-Stump";
+    seamSpeed = "143.2 km/h · Rapid Inswing";
+    dismissalMode = "Bowled / LBW (38% clean bowled, 34% plumb LBW)";
+    fieldPreset = "death_yorker_ring";
+    baseProb = 0.088;
+    expRuns = 0.8;
+  }
+  // Condition 2: Left-arm pace vs Right-hand batsman (classic Rohit / Kohli incoming angle)
+  else if (isLeftArmPace && !isLHB && (batVuln.includes("left-arm") || batVuln.includes("in-duck") || batVuln.includes("front pad"))) {
+    recommendedLength = "full";
+    recommendedLine = "middle_stump";
+    deliveryTitle = "Late In-Ducking Seamer, Middle & Off Stumps";
+    seamSpeed = "144.0 km/h · Sharp Late Tail into Right-Hander";
+    dismissalMode = "LBW (Hitting middle stump) / Bowled through the gate";
+    fieldPreset = "powerplay_attack";
+    baseProb = 0.094;
+    expRuns = 0.7;
+  }
+  // Condition 3: Short ball / bouncer trap on Highveld bouncy tracks (Wanderers/Centurion)
+  else if (isPace && pitchCondition === "highveld_bounce" && (batVuln.includes("bouncer") || batVuln.includes("short") || batVuln.includes("pull") || batVuln.includes("rib"))) {
+    recommendedLength = "bouncer";
+    recommendedLine = isLHB ? "down_leg" : "off_stump";
+    deliveryTitle = "High-Velocity Throat Bouncer, Directed at Armpit";
+    seamSpeed = "145.8 km/h · Heavy Deck Bouncer with Steep Lift";
+    dismissalMode = "Caught Fine Leg / Square Leg off top edge hook";
+    fieldPreset = "short_ball_trap";
+    baseProb = 0.089;
+    expRuns = 1.3;
+  }
+  // Condition 4: 5th stump outswinger trap (Classic Kohli / Root / Smith edge corridor)
+  else if (isPace && (batVuln.includes("5th-stump") || batVuln.includes("outside off") || batVuln.includes("drive") || pitchCondition === "coastal_swing")) {
+    recommendedLength = "good";
+    recommendedLine = isLHB ? "outside_off" : "wide_outside_off";
+    deliveryTitle = "Back-of-a-Length Seamer, 5th-Stump Corridor (4-6 inches outside off)";
+    seamSpeed = "141.0 km/h · Upright Seam Dev. + 2.2° Outswing";
+    dismissalMode = "Caught behind by Wicketkeeper (44%) / 1st & 2nd Slip (38%)";
+    fieldPreset = "fourth_stump_catchers";
+    baseProb = 0.084;
+    expRuns = 0.9;
+  }
+  // Condition 5: Spin trap (Hasaranga, Zampa, Kuldeep, Rashid)
+  else if (isSpinner) {
+    if (bowlStyle.includes("wrist") || bowlStyle.includes("leg")) {
+      recommendedLength = "full";
+      recommendedLine = isLHB ? "middle_stump" : "off_stump";
+      deliveryTitle = "Overspinning Googly, Dipping on Off-Stump Line";
+      seamSpeed = "96.5 km/h · High RPM Wrong'un";
+      dismissalMode = "Bowled through bat-pad gate / Caught Short Mid-wicket off leading edge";
+      fieldPreset = "spin_in_out";
+      baseProb = 0.082;
+      expRuns = 0.9;
+    } else {
+      recommendedLength = "good";
+      recommendedLine = isLHB ? "off_stump" : "middle_stump";
+      deliveryTitle = "Drifting Arm-Ball Skidding Under the Bat";
+      seamSpeed = "94.0 km/h · Flat trajectories with natural drift";
+      dismissalMode = "LBW / Stumped drawing forward defense";
+      fieldPreset = "spin_in_out";
+      baseProb = 0.076;
+      expRuns = 1.0;
+    }
+  }
+
+  // Pitch Condition Modifiers to P(Wicket)
+  let pitchModifierText = "";
+  if (pitchCondition === "highveld_bounce") {
+    if (isPace) baseProb += 0.012;
+    pitchModifierText = "Highveld altitude and hard clay generate extra 12-16cm steep bounce, causing batsman to mistime pull/cut strokes.";
+  } else if (pitchCondition === "coastal_swing") {
+    if (isPace) baseProb += 0.014;
+    pitchModifierText = "Humid coastal atmosphere at Kingsmead/Newlands creates 2.8° lateral movement in air and off seam.";
+  } else if (pitchCondition === "inland_spin") {
+    if (isSpinner) baseProb += 0.015;
+    pitchModifierText = "Abrasive Paarl/Mangaung pitch grips ball, generating sharp turn and variable bounce.";
+  } else {
+    pitchModifierText = "True flat deck requires disciplined execution on off-stump channel with subtle changes of pace.";
+  }
+
+  baseProb = Math.min(0.145, Math.max(0.045, Math.round(baseProb * 1000) / 1000));
+  const probPct = (baseProb * 100).toFixed(1);
+
+  // Tactical Setup Sequence (3-Ball Over Plan)
+  const setupSequence = [
+    {
+      ballNum: "Ball 1 (Setup)",
+      lengthLine: isPace ? "Good length, outside off (139 km/h)" : "Full on middle stump",
+      intent: "Establish boundary respect; invite batsman into tentative front-foot forward defense."
+    },
+    {
+      ballNum: "Ball 2 (Squeeze)",
+      lengthLine: isPace ? "Short of length, targeting rib cage (143 km/h)" : "Faster flatter trajectory",
+      intent: "Push batsman onto back-foot heels; cramp body leverage and deny scoring singles."
+    },
+    {
+      ballNum: "Ball 3 (The Wicket Delivery)",
+      lengthLine: deliveryTitle,
+      intent: `EXECUTE TRAP: ${dismissalMode}. Punishes ${bat.name}'s documented vulnerability.`
+    }
+  ];
+
+  // 5x7 Danger Grid Matrix tailored to this matchup
+  const lengths = ["yorker", "full", "good", "short", "bouncer"];
+  const lines = ["wide_outside_off", "outside_off", "off_stump", "middle_stump", "leg_stump", "down_leg", "wide_down_leg"];
+  const gridCells = [];
+
+  lengths.forEach(len => {
+    lines.forEach(ln => {
+      let cellProb = 0.035;
+      if (len === recommendedLength && ln === recommendedLine) {
+        cellProb = baseProb;
+      } else if (len === recommendedLength) {
+        cellProb = baseProb * 0.72;
+      } else if (ln === recommendedLine) {
+        cellProb = baseProb * 0.68;
+      } else {
+        cellProb = 0.028 + (Math.abs(len.length - ln.length) % 4) * 0.007;
+      }
+      gridCells.push({
+        length: len,
+        line: ln,
+        prob: Math.round(cellProb * 1000) / 10,
+        isRecommended: len === recommendedLength && ln === recommendedLine
+      });
+    });
+  });
+
+  // TreeSHAP Feature Attributions
+  const shapAttributions = [
+    {
+      feature: "Bowler Release Angle & Trajectory",
+      impact: `+${(baseProb * 0.38 * 100).toFixed(1)}%`,
+      desc: `${bowl.name}'s ${bowl.bowlingStyle.replace(/_/g, " ")} naturally creates angles that exploit ${bat.battingHand} blind spot.`
+    },
+    {
+      feature: "Batsman Historical Dismissal Ratio",
+      impact: `+${(baseProb * 0.32 * 100).toFixed(1)}%`,
+      desc: `${bat.name} has ${bat.vulnerability} in multi-nation tournament matches.`
+    },
+    {
+      feature: "Venue / Pitch Condition Synergy",
+      impact: `+${(baseProb * 0.22 * 100).toFixed(1)}%`,
+      desc: pitchModifierText
+    },
+    {
+      feature: "Match Phase Pressure Index",
+      impact: `+${(baseProb * 0.12 * 100).toFixed(1)}%`,
+      desc: `${matchPhase.toUpperCase()} phase fielding restrictions and required scoring velocity force false stroke risk.`
+    }
+  ];
+
+  return {
+    batsman: bat,
+    bowler: bowl,
+    themeBat,
+    themeBowl,
+    pitchCondition,
+    matchPhase,
+    recommendedLength,
+    recommendedLine,
+    deliveryTitle,
+    seamSpeed,
+    probPct,
+    expRuns,
+    dismissalMode,
+    fieldPreset,
+    pitchModifierText,
+    setupSequence,
+    gridCells,
+    shapAttributions
+  };
+};

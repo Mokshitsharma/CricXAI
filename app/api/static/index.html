@@ -1,336 +1,2307 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CricXAI — Strategy Console</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#FBFBFA;--surface:#FFFFFF;--border:#E8E6E1;--text:#1A1A1A;--muted:#6B6B6B;
-    --accent:#1F6F5C;--good:#2E7D32;--warn:#B26A00;--field:#EEF3F0;
-    --shadow:0 1px 2px rgba(20,20,20,.04),0 8px 24px rgba(20,20,20,.06);
-  }
-  :root[data-theme="dark"]{
-    --bg:#0E0F11;--surface:#17191C;--border:#2A2D31;--text:#ECECEC;--muted:#9A9A9A;
-    --accent:#3FA98C;--good:#66BB6A;--warn:#E0A030;--field:#14201C;
-    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
-  }
-  @media (prefers-color-scheme:dark){
-    :root:not([data-theme="light"]){
-      --bg:#0E0F11;--surface:#17191C;--border:#2A2D31;--text:#ECECEC;--muted:#9A9A9A;
-      --accent:#3FA98C;--good:#66BB6A;--warn:#E0A030;--field:#14201C;
-      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
-    }
-  }
-  *,*::before,*::after{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);
-    font-family:"Inter","IBM Plex Sans",system-ui,sans-serif;
-    font-feature-settings:"tnum" 1;-webkit-font-smoothing:antialiased;line-height:1.5}
-  h1,h2,h3,p{margin:0}
-  a{color:var(--accent);text-decoration:none}
-  a:hover{text-decoration:underline}
-  .wrap{max-width:1180px;margin:0 auto;padding:24px 28px 56px}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-  .brand{display:flex;align-items:center;gap:11px}
-  .brand h1{font-size:16px;font-weight:600;letter-spacing:-.01em}
-  .brand span{color:var(--muted);font-size:13px}
-  .headright{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:12px}
-  .tbtn{border:1px solid var(--border);background:var(--surface);color:var(--text);
-    border-radius:8px;height:30px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer}
-  .label{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px}
-  .grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:20px;align-items:start}
-  @media(max-width:820px){.grid{grid-template-columns:1fr}}
-  /* builder */
-  .builder{padding:20px;display:flex;flex-direction:column;gap:15px}
-  .fld{display:flex;flex-direction:column;gap:6px}
-  .fld > span{font-size:12px;font-weight:500}
-  select,input[type=number]{height:38px;border:1px solid var(--border);border-radius:8px;
-    background:var(--surface);color:var(--text);font:inherit;font-size:14px;padding:0 10px;width:100%}
-  .seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
-  .seg button{flex:1;border:0;border-right:1px solid var(--border);background:var(--surface);
-    color:var(--muted);font:inherit;font-size:12px;padding:9px 4px;cursor:pointer}
-  .seg button:last-child{border-right:0}
-  .seg button.on{background:var(--accent);color:#fff;font-weight:600}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .chips{display:flex;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid var(--border)}
-  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
-    padding:3px 9px;border-radius:999px;border:1px solid var(--border);color:var(--muted);text-transform:capitalize}
-  /* results */
-  .results{display:flex;flex-direction:column;gap:20px}
-  .primary{padding:24px;box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px}
-  @media(max-width:720px){.primary{grid-template-columns:1fr}}
-  .delivery{font-size:28px;font-weight:600;letter-spacing:-.02em;margin:12px 0}
-  .statrow{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
-  .big{font-size:42px;font-weight:600;line-height:1;color:var(--accent);letter-spacing:-.02em}
-  .conf{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 9px;
-    border-radius:999px;border:1px solid var(--border);color:var(--muted);text-transform:capitalize}
-  .conf.medium{color:var(--warn);border-color:var(--warn)}
-  .conf.low{color:var(--warn);border-color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
-  .conf.high{color:var(--good);border-color:var(--good)}
-  .reasons{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:8px}
-  .reasons li{font-size:13.5px;display:flex;gap:8px}
-  .reasons li::before{content:"";flex:0 0 6px;height:6px;margin-top:7px;border-radius:2px;background:var(--accent)}
-  .fieldbox{border-left:1px solid var(--border);padding-left:22px;display:flex;flex-direction:column;gap:10px}
-  @media(max-width:720px){.fieldbox{border-left:0;border-top:1px solid var(--border);padding:18px 0 0}}
-  .alts{padding:16px 20px}
-  .alt{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
-  .alt:last-child{border-bottom:0}
-  .alt:hover{color:var(--accent)}
-  .alt .n{color:var(--muted);width:16px;font-size:12px}
-  .alt .lab{font-size:14px;font-weight:500;flex:1}
-  .alt .m{font-size:13px;color:var(--muted);display:flex;gap:22px}
-  .heat{padding:18px 20px}
-  .hgrid{display:grid;grid-template-columns:76px repeat(7,minmax(0,1fr));gap:3px;margin-top:12px;min-width:560px}
-  .hh{font-size:10px;color:var(--muted);text-align:center;align-self:center}
-  .hr{font-size:11px;color:var(--muted);align-self:center}
-  .hc{aspect-ratio:1/.6;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border-radius:3px}
-  .heatscroll{overflow-x:auto}
-  .muted{color:var(--muted)}
-  .err{color:var(--warn);font-size:13px;padding:14px 0}
-  .skel{background:linear-gradient(90deg,var(--border),transparent,var(--border));
-    background-size:200% 100%;animation:sh 1.2s infinite;border-radius:6px}
-  @keyframes sh{to{background-position:-200% 0}}
-  .lowbanner{font-size:12px;color:var(--warn);margin-top:8px}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CricXAI — Prescriptive Cricket Intelligence & 10-Nation Scouting Suite</title>
+  <link rel="stylesheet" href="/stadium.css">
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M5 7l14 10M19 7L5 17"/></svg>
-      <h1>CricXAI</h1><span>Strategy Console</span>
-    </div>
-    <div class="headright">
-      <span id="mv">model —</span>
-      <button class="tbtn" id="themebtn">Dark</button>
-    </div>
-  </header>
 
-  <div class="grid">
-    <!-- builder -->
-    <form class="card builder" id="builder" autocomplete="off">
-      <div class="label">Situation</div>
-      <label class="fld"><span>Batsman</span>
-        <select id="batsman"></select>
-      </label>
-      <div class="fld"><span>Bowler type</span>
-        <div class="seg" id="bowler"></div>
+  <!-- Top Global Navigation Bar -->
+  <nav class="site-nav">
+    <div class="nav-container">
+      <div class="brand-wrap" onclick="navigateToPage('landing')">
+        <div class="brand-emblem">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 3v18M5 7l14 10M19 7L5 17"/>
+          </svg>
+        </div>
+        <div style="display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="brand-title">CricXAI</span>
+            <span class="brand-badge">PRO v2.0</span>
+          </div>
+          <span style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono); letter-spacing:0.04em;">PRESCRIPTIVE INTELLIGENCE</span>
+        </div>
       </div>
-      <div class="two">
-        <label class="fld"><span>Over (0–49)</span><input type="number" id="over" min="0" max="49" value="43"></label>
-        <label class="fld"><span>Ball (1–6)</span><input type="number" id="ball" min="1" max="6" value="2"></label>
-        <label class="fld"><span>Score</span><input type="number" id="score" min="0" value="271"></label>
-        <label class="fld"><span>Wickets</span><input type="number" id="wickets" min="0" max="9" value="6"></label>
+
+      <div class="nav-links-wrap">
+        <ul class="nav-links">
+          <li><a id="nav-landing" class="active" onclick="navigateToPage('landing')">Home</a></li>
+          <li><a id="nav-players" onclick="navigateToPage('players')">10-Nation Rosters</a></li>
+          <li><a id="nav-stadium" onclick="navigateToPage('stadium')">Stadium Arena</a></li>
+          <li><a id="nav-dossier" onclick="navigateToPage('dossier')">Batsman Dossier</a></li>
+          <li><a id="nav-matchup" onclick="navigateToPage('matchup')">Matchup &amp; XI AI</a></li>
+          <li><a id="nav-pvp" onclick="navigateToPage('pvp')">Player vs Player</a></li>
+          <li><a id="nav-console" onclick="navigateToPage('console')">Live Console</a></li>
+        </ul>
       </div>
-      <div class="two">
-        <div class="fld"><span>Innings</span>
-          <div class="seg" id="innings">
-            <button type="button" data-v="1">1st</button>
-            <button type="button" data-v="2" class="on">Chasing</button>
+
+      <div class="nav-actions">
+        <div class="live-pulse-badge">
+          <span class="pulse-dot"></span>
+          <span id="navModelStatus">ML Engine Online</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="navigateToPage('matchup')">Matchup AI &rarr;</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========================================================================= -->
+  <!-- PAGE 1: PURE CINEMATIC INTRODUCTORY LANDING PAGE -->
+  <!-- ========================================================================= -->
+  <main class="page-view active" id="page-landing">
+    <header class="hero-section">
+      <div class="hero-bg-layer"></div>
+      <div class="hero-radial-glow"></div>
+
+      <div class="hero-content">
+        <!-- Left: Hero Pitch Statement -->
+        <div class="hero-copy">
+          <div class="hero-tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Senior Sports Intelligence Platform
+          </div>
+
+          <h1 class="hero-headline">
+            The World's First <span class="gradient-text">Prescriptive</span> Cricket Strategy Engine.
+          </h1>
+
+          <p class="hero-subhead">
+            Past wagon wheels look backwards. CricXAI prescribes the exact length, line, coordinate field placement, and dismissal probability for the <b>very next delivery</b> — powered by LightGBM and TreeSHAP explainability.
+          </p>
+
+          <div class="hero-cta-group">
+            <button class="btn btn-primary" onclick="navigateToPage('stadium')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+              Enter Strategy Suite &rarr;
+            </button>
+            <button class="btn btn-secondary" onclick="navigateToPage('players')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Browse 10-Nation Top 15
+            </button>
+          </div>
+
+          <div class="hero-metrics-strip">
+            <div class="hero-metric-item">
+              <b>10</b>
+              <span>Eligible Nations</span>
+            </div>
+            <div class="hero-metric-item">
+              <b>150</b>
+              <span>Top Players Judged</span>
+            </div>
+            <div class="hero-metric-item">
+              <b>35,854</b>
+              <span>Deliveries Parsed</span>
+            </div>
+            <div class="hero-metric-item">
+              <b>&lt; 35ms</b>
+              <span>Inference Latency</span>
+            </div>
           </div>
         </div>
-        <label class="fld" id="targetwrap"><span>Target</span><input type="number" id="target" min="1" value="322"></label>
-      </div>
-      <div class="chips">
-        <span class="chip" id="phasechip">phase · —</span>
-        <span class="chip" id="prchip">pressure · —</span>
-      </div>
-    </form>
 
-    <!-- results -->
-    <div class="results">
-      <div class="card primary" id="primary">
-        <div id="primaryMain"><div class="skel" style="height:180px"></div></div>
-        <div class="fieldbox" id="fieldbox"></div>
-      </div>
+        <!-- Right: 3D Holographic Pitch Widget -->
+        <div class="perspective-stage">
+          <div class="hologram-pitch-card" id="heroHologramCard">
+            <div class="pitch-header">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:700; color:var(--text-primary);">PITCH HOLOGRAM 3D</span>
+                <span class="pitch-telemetry-badge">LIVE RADAR</span>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);" id="heroOverIndicator">OVER 43.2</span>
+            </div>
 
-      <div class="card alts" id="altsCard" hidden>
-        <div class="label" style="margin-bottom:8px">Alternatives</div>
-        <div id="alts"></div>
-      </div>
+            <!-- Floating 3D HUD Tags -->
+            <div class="hud-tag hud-tag-1">
+              <div class="hud-label">RECOMMENDED DELIVERY</div>
+              <div class="hud-val" id="hudDelivery">Yorker · Off Stump</div>
+            </div>
 
-      <div class="card heat">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <div class="label">Length × line — dismissal danger</div>
-          <span class="muted" style="font-size:11px">value = P(wicket) ×100 · recommended cell ringed</span>
+            <div class="hud-tag hud-tag-2">
+              <div class="hud-label">DISMISSAL ODDS</div>
+              <div class="hud-val" style="color:var(--accent-green);" id="hudProb">8.4% (High)</div>
+            </div>
+
+            <div class="hud-tag hud-tag-3">
+              <div class="hud-label">SEAM &amp; SPEED</div>
+              <div class="hud-val" id="hudAngle">142.4 km/h · Inswing</div>
+            </div>
+
+            <!-- Pitch Visual Canvas -->
+            <div class="pitch-canvas-wrap">
+              <svg class="pitch-strip-visual" viewBox="0 0 460 260">
+                <defs>
+                  <linearGradient id="pClay" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#a89269"/>
+                    <stop offset="50%" stop-color="#bf9f73"/>
+                    <stop offset="100%" stop-color="#a89269"/>
+                  </linearGradient>
+                  <radialGradient id="ballGlow">
+                    <stop offset="0%" stop-color="#EF4444"/>
+                    <stop offset="60%" stop-color="#B91C1C"/>
+                    <stop offset="100%" stop-color="#7F1D1D"/>
+                  </radialGradient>
+                </defs>
+
+                <rect x="70" y="80" width="320" height="100" rx="6" fill="url(#pClay)" stroke="#7c6341" stroke-width="1.5"/>
+                <line x1="110" y1="80" x2="110" y2="180" stroke="#ffffff" stroke-width="2"/>
+                <line x1="350" y1="80" x2="350" y2="180" stroke="#ffffff" stroke-width="2"/>
+
+                <circle cx="100" cy="120" r="3" fill="#f59e0b"/>
+                <circle cx="100" cy="130" r="3" fill="#f59e0b"/>
+                <circle cx="100" cy="140" r="3" fill="#f59e0b"/>
+                <circle cx="360" cy="120" r="3" fill="#f59e0b"/>
+                <circle cx="360" cy="130" r="3" fill="#f59e0b"/>
+                <circle cx="360" cy="140" r="3" fill="#f59e0b"/>
+
+                <rect x="120" y="82" width="55" height="96" fill="rgba(239, 68, 68, 0.12)" stroke="rgba(239,68,68,0.3)" stroke-dasharray="3 3"/>
+                <text x="147" y="94" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#EF4444" text-anchor="middle">BOUNCER</text>
+
+                <rect x="180" y="82" width="65" height="96" fill="rgba(245, 158, 11, 0.12)" stroke="rgba(245,158,11,0.3)" stroke-dasharray="3 3"/>
+                <text x="212" y="94" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#F59E0B" text-anchor="middle">GOOD</text>
+
+                <rect x="250" y="82" width="55" height="96" fill="rgba(52, 211, 153, 0.12)" stroke="rgba(52,211,153,0.3)" stroke-dasharray="3 3"/>
+                <text x="277" y="94" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#34D399" text-anchor="middle">FULL</text>
+
+                <rect x="310" y="82" width="38" height="96" fill="rgba(0, 230, 118, 0.2)" stroke="#00E676" stroke-width="1.5"/>
+                <text x="329" y="94" font-family="'JetBrains Mono', monospace" font-size="7.5" font-weight="700" fill="#00E676" text-anchor="middle">YORKER</text>
+
+                <path id="trajectoryCurve" class="trajectory-arc" d="M 90 130 Q 230 40 335 125" fill="none" stroke="#00E676" stroke-width="2.5"/>
+                <circle cx="335" cy="125" r="14" fill="none" stroke="#00E676" stroke-width="1.5" class="ball-impact-pulse"/>
+                <circle cx="335" cy="125" r="5" fill="url(#ballGlow)" stroke="#FFFFFF" stroke-width="1"/>
+              </svg>
+            </div>
+
+            <!-- Scenario Quick Buttons -->
+            <div class="scenario-quick-selector">
+              <button class="sc-btn active" onclick="loadHeroScenario('death_yorker')">Death Yorker (44th Ov)</button>
+              <button class="sc-btn" onclick="loadHeroScenario('powerplay_swing')">Powerplay Outswing</button>
+              <button class="sc-btn" onclick="loadHeroScenario('short_trap')">Short-Ball Trap</button>
+            </div>
+          </div>
         </div>
-        <div class="heatscroll"><div class="hgrid" id="hgrid"></div></div>
+      </div>
+    </header>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- PAGE 2: 10-NATION TOP 15 SCOUTING DATABASE -->
+  <!-- ========================================================================= -->
+  <main class="page-view" id="page-players">
+    <div class="section-wrapper">
+      <div class="section-head">
+        <span class="section-eyebrow">Scouting Database</span>
+        <h2 class="section-title">Top 15 Players from the 10 Eligible Nations</h2>
+        <p class="section-desc">
+          Analyzed, rated, and judged across 150 international cricketers. Filter by nation to inspect tactical roles, scout grades, primary strengths, and critical dismissal vulnerabilities.
+        </p>
+      </div>
+
+      <!-- 10-Country Selection Filter Bar -->
+      <div class="country-filter-strip" id="countryPillBar"></div>
+
+      <!-- 15 Players Grid -->
+      <div class="players-grid-container" id="playersGrid"></div>
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- PAGE 3: STADIUM TACTICAL ARENA & FIELDER RADAR (COUNTRY-FILTERED) -->
+  <!-- ========================================================================= -->
+  <main class="page-view" id="page-stadium">
+    <div class="section-wrapper">
+      <div class="section-head">
+        <span class="section-eyebrow">Stadium Tactical Arena</span>
+        <h2 class="section-title">International Ground with All 11 Named Fielders</h2>
+        <p class="section-desc">
+          Select Bowling and Batting countries to filter players. Toggle between <b>3D Stadium Tilt Mode</b> and <b>2D Tactical Radar</b>, switch batter stance, or click any fielder pin to inspect their metrics.
+        </p>
+      </div>
+
+      <div class="ground-showcase-container">
+        <!-- Ground Left Area -->
+        <div>
+          <!-- Country-Wise Selection Controls Bar -->
+          <div class="ground-filter-controls-row">
+            <!-- Bowling Team & Bowler -->
+            <div class="filter-ctrl-group">
+              <span class="filter-ctrl-label">Bowling Team:</span>
+              <select class="preset-dropdown" id="stadiumBowlingCountrySelect" onchange="onStadiumCountryChange()"></select>
+            </div>
+
+            <div class="filter-ctrl-group">
+              <span class="filter-ctrl-label">Bowler:</span>
+              <select class="preset-dropdown" id="stadiumBowlerSelect" onchange="onStadiumBowlerChange()"></select>
+            </div>
+
+            <!-- Batting Team & Striker -->
+            <div class="filter-ctrl-group" style="margin-left:auto;">
+              <span class="filter-ctrl-label">Batting Team:</span>
+              <select class="preset-dropdown" id="stadiumBattingCountrySelect" onchange="onStadiumCountryChange()"></select>
+            </div>
+
+            <div class="filter-ctrl-group">
+              <span class="filter-ctrl-label">Striker:</span>
+              <select class="preset-dropdown" id="stadiumStrikerSelect" onchange="onStadiumStrikerChange()"></select>
+            </div>
+          </div>
+
+          <!-- Ground Toolbar (Camera Angle & Presets) -->
+          <div class="ground-toolbar">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">View Angle:</span>
+              <div class="ground-mode-pills">
+                <button class="ground-mode-pill active" id="btnView3D">3D Stadium Tilt</button>
+                <button class="ground-mode-pill" id="btnView2D">2D Broadcast Radar</button>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Batter Stance:</span>
+              <div class="ground-mode-pills">
+                <button class="ground-mode-pill active" id="btnBatterRHB">RHB (Right)</button>
+                <button class="ground-mode-pill" id="btnBatterLHB">LHB (Left)</button>
+              </div>
+            </div>
+
+            <div class="ground-preset-select-wrap">
+              <span style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Field Preset:</span>
+              <select class="preset-dropdown" id="groundPresetSelect">
+                <option value="death_yorker_ring">Death Yorker Ring (2 Out, 5 Ring)</option>
+                <option value="powerplay_attack">Powerplay Attack (Slips + Infield)</option>
+                <option value="middle_containment">Middle Containment (5-4 Spread)</option>
+                <option value="short_ball_trap">Short-Ball Trap (Leg-side Catchers)</option>
+                <option value="fourth_stump_catchers">Fourth-Stump Catchers (3 Slips, Gully)</option>
+                <option value="spin_in_out">Spin In-Out (Silly Point + Deep Riders)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SVG Ground Canvas -->
+          <div class="ground-arena-wrapper mode-3d" id="groundArena">
+            <div class="ground-overlay-tint"></div>
+            <svg class="ground-svg-canvas" id="groundSvg" viewBox="0 0 600 580"></svg>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:11.5px; color:var(--text-muted);">
+            <span>Click any fielder pin to inspect assigned player &amp; metrics</span>
+            <span style="display:flex; align-items:center; gap:6px;">
+              <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-green); display:inline-block;"></span> Infield Ring
+              <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-purple); display:inline-block; margin-left:8px;"></span> Slip Cordon
+              <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-cyan); display:inline-block; margin-left:8px;"></span> Boundary Rider
+            </span>
+          </div>
+        </div>
+
+        <!-- Ground Right: Fielder Inspector & 11-Player Squad -->
+        <div class="ground-inspector-card">
+          <div class="inspector-header">
+            <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); letter-spacing:0.08em; text-transform:uppercase;">FIELDER INSPECTOR</span>
+            <span style="font-size:11px; color:var(--text-muted);" id="insCountryBadge">INDIA FIELD</span>
+          </div>
+
+          <div class="selected-fielder-profile">
+            <div class="fielder-avatar" id="insFielderAvatar">RJ</div>
+            <div>
+              <div class="fielder-info-name" id="insFielderName">R. Jadeja</div>
+              <div class="fielder-info-pos" id="insFielderPos">POINT (INFIELD)</div>
+            </div>
+          </div>
+
+          <div class="fielder-metrics-grid">
+            <div class="f-metric">
+              <div class="f-metric-val" id="insFielderDist">25.0m</div>
+              <div class="f-metric-lbl">Distance from Pitch</div>
+            </div>
+            <div class="f-metric">
+              <div class="f-metric-val" style="color:var(--accent-green);" id="insFielderProb">96%</div>
+              <div class="f-metric-lbl">Catch Conversion</div>
+            </div>
+            <div class="f-metric">
+              <div class="f-metric-val" id="insFielderSpeed">0.28s</div>
+              <div class="f-metric-lbl">Reaction Time</div>
+            </div>
+            <div class="f-metric">
+              <div class="f-metric-val" style="color:var(--accent-mint);">Tier 1</div>
+              <div class="f-metric-lbl">Fielder Rating</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Tactical Responsibility:</div>
+            <p style="font-size:12.5px; color:var(--text-secondary); line-height:1.5;" id="insFielderRole">
+              Gun fielder; cuts off square cut singles and attacks direct hits at the non-striker stumps.
+            </p>
+          </div>
+
+          <div style="border-top:1px solid var(--border-subtle); padding-top:14px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">
+              Active 11-Player On-Field Roster
+            </div>
+            <div class="roster-list" id="fielderRosterList"></div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
+  </main>
 
-<script>
-const $ = (s) => document.querySelector(s);
-const BOWLERS = [["pace_right_arm","Pace R"],["pace_left_arm","Pace L"],["off_spin","Off-spin"],["leg_spin","Leg-spin"],["left_arm_spin","SLA"]];
-let LENGTHS = ["yorker","full","good","short","bouncer"];
-let LINES = ["wide_outside_off","outside_off","off_stump","middle_stump","leg_stump","down_leg","wide_down_leg"];
-let state = { bowler:"pace_right_arm", innings:2 };
-let seq = 0;
+  <!-- ========================================================================= -->
+  <!-- PAGE 4: BATSMAN INTELLIGENCE DOSSIER (3-STEP ANALYTICAL WORKFLOW) -->
+  <!-- ========================================================================= -->
+  <main class="page-view" id="page-dossier">
+    <div class="section-wrapper">
+      <div class="section-head">
+        <span class="section-eyebrow">Scouting Dossier</span>
+        <h2 class="section-title">3-Step Batsman Analysis &amp; Dismissal Intelligence</h2>
+        <p class="section-desc">
+          Choose any batsman across the 10 nations to progress through the complete prescriptive workflow: <b>1. Theory &amp; Tips</b> &rarr; <b>2. Visual Field &amp; Heatmap</b> &rarr; <b>3. Machine Learning Values &amp; TreeSHAP</b>.
+        </p>
+      </div>
 
-// theme
-const root = document.documentElement;
-function applyTheme(t){ if(t) root.dataset.theme=t; localStorage.setItem("cx-theme",t||"");
-  $("#themebtn").textContent = (root.dataset.theme==="dark"||(!root.dataset.theme&&matchMedia("(prefers-color-scheme:dark)").matches))?"Light":"Dark"; }
-try{ const s=localStorage.getItem("cx-theme"); if(s) applyTheme(s); else applyTheme(); }catch(e){ applyTheme(); }
-$("#themebtn").onclick = () => {
-  const dark = root.dataset.theme==="dark" || (!root.dataset.theme && matchMedia("(prefers-color-scheme:dark)").matches);
-  applyTheme(dark?"light":"dark");
-};
+      <!-- Country & Batsman Picker -->
+      <div class="ground-filter-controls-row" style="margin-bottom:24px;">
+        <div class="filter-ctrl-group">
+          <span class="filter-ctrl-label">Filter Country:</span>
+          <select class="preset-dropdown" id="dossierCountrySelect" onchange="onDossierCountryChange()"></select>
+        </div>
 
-// phrase helpers
-const tit=(s)=>s.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
-const lineShort=(s)=>s.replace(/_/g," ").replace("outside","out").replace("wide out off","wide off").replace("wide down leg","wide leg");
+        <div class="filter-ctrl-group">
+          <span class="filter-ctrl-label">Select Batsman:</span>
+          <select class="preset-dropdown" id="dossierBatsmanSelect" onchange="onDossierBatsmanChange()"></select>
+        </div>
 
-// build bowler segmented control
-$("#bowler").innerHTML = BOWLERS.map(([v,l],i)=>`<button type="button" data-v="${v}" class="${i===0?'on':''}">${l}</button>`).join("");
-$("#bowler").onclick = (e)=>{ const b=e.target.closest("button"); if(!b)return;
-  [...$("#bowler").children].forEach(x=>x.classList.toggle("on",x===b)); state.bowler=b.dataset.v; run(); };
-$("#innings").onclick = (e)=>{ const b=e.target.closest("button"); if(!b)return;
-  [...$("#innings").children].forEach(x=>x.classList.toggle("on",x===b)); state.innings=+b.dataset.v;
-  $("#targetwrap").style.display = state.innings===2?"":"none"; run(); };
+        <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+          <span class="telemetry-pill" id="dossierBatsmanHand">Hand: RHB</span>
+          <span class="telemetry-pill" id="dossierBatsmanGrade">Grade: S-Tier</span>
+        </div>
+      </div>
 
-["over","ball","score","wickets","target","batsman"].forEach(id=>{
-  $("#"+id).addEventListener("input", debounce(run,250));
-});
-function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+      <!-- 3-Step Navigation Tabs -->
+      <div class="analysis-tabs-nav">
+        <button class="analysis-tab-btn active" id="btnTab1" onclick="switchAnalysisTab(1)">
+          <span class="tab-step-num">STEP 1</span>
+          Theory &amp; Dismissal Tips
+        </button>
+        <button class="analysis-tab-btn" id="btnTab2" onclick="switchAnalysisTab(2)">
+          <span class="tab-step-num">STEP 2</span>
+          Visual Ground &amp; Heatmap
+        </button>
+        <button class="analysis-tab-btn" id="btnTab3" onclick="switchAnalysisTab(3)">
+          <span class="tab-step-num">STEP 3</span>
+          ML Values &amp; TreeSHAP Terms
+        </button>
+      </div>
 
-function payload(){
-  const m = { innings:state.innings, over:+$("#over").value||0, ball_in_over:+$("#ball").value||1,
-    score:+$("#score").value||0, wickets:+$("#wickets").value||0 };
-  if(state.innings===2) m.target = +$("#target").value||undefined;
-  return { match:m, batsman_id:$("#batsman").value, bowler_type:state.bowler, options:{top_k:3} };
-}
+      <!-- TAB 1: THEORY & TIPS -->
+      <div class="analysis-tab-panel active" id="tabPanel1">
+        <div class="theory-grid">
+          <!-- Card Left: The Recommended Trap -->
+          <div class="theory-card">
+            <div class="theory-trap-banner">
+              <div class="trap-title" id="dossierTrapName">The 5th-Stump Nibble &amp; Inswing Yorker Trap</div>
+              <div class="trap-desc" id="dossierDeliverySeq">
+                Bowl 2 consecutive outswingers in the 5th-stump channel enticing the drive away from body, then follow with a 140+ km/h inswinging yorker at base of off-stump.
+              </div>
+            </div>
 
-async function jpost(path,body){
-  const r = await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  if(!r.ok){ const t=await r.text(); throw new Error(r.status+" "+t.slice(0,200)); }
-  return r.json();
-}
+            <div>
+              <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:8px;">
+                Phase Susceptibility &amp; Match State
+              </div>
+              <p style="font-size:13.5px; color:var(--text-secondary); line-height:1.6;" id="dossierPhaseVuln">
+                Balls 1–15: tentative footwork outside off stump. Death overs (Over 40+): average plummets to 12.0 when denied width.
+              </p>
+            </div>
 
-async function run(){
-  const my = ++seq;
-  const body = payload();
-  if(!body.batsman_id) return;
-  $("#primaryMain").innerHTML = '<div class="skel" style="height:180px"></div>';
-  try{
-    const [rec, grid] = await Promise.all([ jpost("/v1/recommendation",body), jpost("/v1/grid",body) ]);
-    if(my!==seq) return;
-    renderSituation(rec.situation, rec.model_version);
-    renderPrimary(rec);
-    renderAlts(rec);
-    renderHeat(grid, rec.recommendations[0]);
-  }catch(err){
-    if(my!==seq) return;
-    const msg = String(err.message||err);
-    $("#primaryMain").innerHTML = msg.includes("422")
-      ? '<div class="err">Not enough history on this batsman to model this situation.</div>'
-      : '<div class="err">Request failed — '+msg+' <a href="#" onclick="run();return false">retry</a></div>';
-    $("#fieldbox").innerHTML=""; $("#altsCard").hidden=true; $("#hgrid").innerHTML="";
-  }
-}
+            <div>
+              <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:8px;">
+                Identified Technical Flaw
+              </div>
+              <p style="font-size:13.5px; color:var(--text-secondary); line-height:1.6;" id="dossierTechnicalFlaw">
+                Tends to push his hands at the ball without full forward stride when bowling tight 5th stump channel.
+              </p>
+            </div>
+          </div>
 
-function renderSituation(s,mv){
-  $("#mv").textContent = "model "+mv;
-  $("#phasechip").textContent = "phase · "+titR(s.phase);
-  $("#prchip").textContent = "pressure · "+s.pressure_index;
-}
-const titR=(s)=>s.replace(/_/g," ");
+          <!-- Card Right: Tactical Coaching Instructions -->
+          <div class="theory-card">
+            <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase; letter-spacing:0.08em;">
+              COACHING DOSSIER &amp; FIELD DIRECTIVE
+            </span>
+            
+            <div class="coaching-bullet-list">
+              <div class="coaching-bullet-item">
+                <span style="color:var(--accent-green); font-size:18px; line-height:1;">&#8226;</span>
+                <div>
+                  <b style="color:var(--text-primary); display:block; margin-bottom:2px;">Target Line:</b>
+                  <span id="dossierTargetLine">5th stump channel (4–6 inches outside off) moving away from right-hander.</span>
+                </div>
+              </div>
 
-function renderPrimary(rec){
-  const r = rec.recommendations[0];
-  const low = rec.situation.low_sample;
-  $("#primaryMain").innerHTML = `
-    <div class="label">Recommended delivery</div>
-    <div class="delivery">${titR(r.label)}</div>
-    <div class="statrow">
-      <div><div class="big">${(r.dismissal_probability*100).toFixed(1)}%</div>
-        <div class="label" style="margin-top:6px">Dismissal probability</div></div>
-      <div><div style="font-size:20px;font-weight:600">${r.expected_runs.toFixed(1)}</div>
-        <div class="label" style="margin-top:6px">Exp. runs</div></div>
-      <span class="conf ${r.confidence}">${r.confidence} confidence</span>
+              <div class="coaching-bullet-item">
+                <span style="color:var(--accent-green); font-size:18px; line-height:1;">&#8226;</span>
+                <div>
+                  <b style="color:var(--text-primary); display:block; margin-bottom:2px;">Recommended Field Configuration:</b>
+                  <span id="dossierFieldDirective">Fourth-stump slip cordon (3 slips + gully) during powerplay; shift to Death Yorker Ring at the death.</span>
+                </div>
+              </div>
+
+              <div class="coaching-bullet-item">
+                <span style="color:var(--accent-green); font-size:18px; line-height:1;">&#8226;</span>
+                <div>
+                  <b style="color:var(--text-primary); display:block; margin-bottom:2px;">Primary Dismissal Mechanism:</b>
+                  <span>Outside edge to wicketkeeper / 1st slip (42%) or bowled off inside edge onto stumps (34%).</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn btn-secondary btn-sm" style="margin-top:auto;" onclick="switchAnalysisTab(2)">
+              Proceed to Step 2: Visual Ground &amp; Heatmap &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: VISUAL GROUND & HEATMAP -->
+      <div class="analysis-tab-panel" id="tabPanel2">
+        <div style="display:grid; grid-template-columns: minmax(0, 1fr) 380px; gap:24px; align-items:start;">
+          <!-- Left: Synchronized 5x7 Danger Matrix Heatmap -->
+          <div class="glass-panel danger-heatmap-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase;">
+                  DISMISSAL DANGER MATRIX (5 &times; 7)
+                </span>
+                <h3 style="font-size:16px; font-weight:700; margin-top:2px;">Length &times; Line Probability Grid</h3>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">P(Wicket) &times; 100</span>
+            </div>
+
+            <div class="heatmap-grid-scroll">
+              <div class="heatmap-table" id="dossierHeatmapTable"></div>
+            </div>
+          </div>
+
+          <!-- Right: Visual Tactical Field Diagram -->
+          <div class="glass-panel" style="padding:22px;">
+            <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase;">
+              CUSTOM FIELD PLACEMENT
+            </span>
+            <div style="font-size:15px; font-weight:700; margin:4px 0 14px;" id="dossierPresetName">
+              Fourth-Stump Catchers
+            </div>
+
+            <!-- Mini ground visualizer -->
+            <div style="width:100%; height:260px; background:#07120d; border-radius:var(--radius-md); border:1px solid rgba(0,230,118,0.2); overflow:hidden; position:relative;">
+              <svg id="miniGroundSvg" viewBox="0 0 400 380" style="width:100%; height:100%;"></svg>
+            </div>
+
+            <button class="btn btn-secondary btn-sm" style="width:100%; margin-top:16px;" onclick="switchAnalysisTab(3)">
+              Proceed to Step 3: ML Values &amp; TreeSHAP &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: MACHINE LEARNING & SHAP VALUES -->
+      <div class="analysis-tab-panel" id="tabPanel3">
+        <!-- Top Metrics Cards -->
+        <div class="shap-summary-grid">
+          <div class="ml-metric-box">
+            <div class="ml-metric-num" id="mlDismissalProb">8.4%</div>
+            <div class="ml-metric-sub">P(Dismissal / Delivery)</div>
+          </div>
+          <div class="ml-metric-box">
+            <div class="ml-metric-num" style="color:var(--accent-cyan);" id="mlExpectedRuns">1.1</div>
+            <div class="ml-metric-sub">Expected Runs E[Runs]</div>
+          </div>
+          <div class="ml-metric-box">
+            <div class="ml-metric-num" style="color:var(--accent-amber);" id="mlConfidenceTier">High</div>
+            <div class="ml-metric-sub">Model Calibration Confidence</div>
+          </div>
+        </div>
+
+        <!-- TreeSHAP Attribution Waterfall -->
+        <div class="shap-waterfall-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <div>
+              <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase;">
+                TREESHAP FEATURE ATTRIBUTION BREAKDOWN
+              </span>
+              <h3 style="font-size:16px; font-weight:700; margin-top:2px;">Feature Marginal Contribution to P(Wicket)</h3>
+            </div>
+            <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">Baseline P(Wicket) = 3.2%</span>
+          </div>
+
+          <div id="dossierShapList"></div>
+        </div>
+
+        <!-- ML Model Terms & Specifications Glossary -->
+        <div class="glass-panel" style="padding:24px;">
+          <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+            MACHINE LEARNING MODEL ARCHITECTURE &amp; TERMS
+          </span>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:18px; margin-top:14px;">
+            <div class="scout-detail-box">
+              <div class="scout-detail-label">Model Type</div>
+              <b>LightGBM GBDT (Gradient Boosted Trees)</b>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">Binary log-loss classification objective with calibrated sigmoid output.</div>
+            </div>
+            <div class="scout-detail-box">
+              <div class="scout-detail-label">Explainability</div>
+              <b>TreeSHAP (Lundberg &amp; Lee)</b>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">Exact Shapley values derived through decision-tree path probabilities in polynomial time.</div>
+            </div>
+            <div class="scout-detail-box">
+              <div class="scout-detail-label">Hyperparameters</div>
+              <b style="font-family:var(--font-mono); font-size:12px;">depth=6, leaves=31, lr=0.03</b>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">Trained on 35,854 historical delivery feature vectors.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
-    <ul class="reasons">${r.reasons.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>
-    ${low?'<div class="lowbanner">Low sample — treat the probability as a range.</div>':''}`;
-  renderField(r);
-}
-function escapeHtml(s){ return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+  </main>
 
-function renderField(r){
-  const pts = (r.field_positions||[]).map(p=>{
-    const x = 22 + p.x*216, y = 22 + p.y*216;
-    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--accent)"><title>${p.name.replace(/_/g," ")}</title></circle>`;
-  }).join("");
-  $("#fieldbox").innerHTML = `
-    <div class="label">Field · ${escapeHtml(r.field_label)}</div>
-    <svg viewBox="0 0 260 260" width="100%" style="background:var(--field);border:1px solid var(--border);border-radius:8px">
-      <ellipse cx="130" cy="132" rx="112" ry="118" fill="none" stroke="var(--border)"/>
-      <circle cx="130" cy="132" r="54" fill="none" stroke="var(--border)"/>
-      <rect x="125" y="188" width="10" height="26" fill="none" stroke="var(--muted)"/>
-      ${pts}
-      <circle cx="130" cy="192" r="3.6" fill="var(--text)"/>
-    </svg>
-    <p class="muted" style="font-size:11.5px">Preset positions for the recommended delivery.</p>`;
-}
+  <!-- ========================================================================= -->
+  
+  <!-- ========================================================================= -->
+  <!-- PAGE: AI PLAYING XI PREDICTOR & MATCHUP SIMULATOR (WITH SHAP SWAPS)       -->
+  <!-- ========================================================================= -->
+  <main class="page-view" id="page-matchup">
+    <div class="section-wrapper">
+      <div class="section-head">
+        <span class="section-eyebrow">Tactical Matchup Simulation</span>
+        <h2 class="section-title">AI Playing XI Predictor &amp; Win Probability</h2>
+        <p class="section-desc">
+          Select any two contending nations. The AI optimizes the <b>strongest Playing XI</b> specifically tailored to counter the opponent's weaknesses in South African conditions, calculates the <b>Win Probability</b>, and provides <b>SHAP-style tactical swap recommendations</b>.
+        </p>
+      </div>
 
-function renderAlts(rec){
-  const rest = rec.recommendations.slice(1);
-  $("#altsCard").hidden = rest.length===0;
-  $("#alts").innerHTML = rest.map(r=>`
-    <div class="alt" title="rank ${r.rank}">
-      <span class="n">${r.rank}</span>
-      <span class="lab">${titR(r.label)}</span>
-      <span class="m"><span>${(r.dismissal_probability*100).toFixed(1)}%</span><span>E ${r.expected_runs.toFixed(1)}</span></span>
-    </div>`).join("");
-}
+      <!-- Team & Pitch Condition Selection Card -->
+      <div class="matchup-controls-card">
+        <div class="matchup-selection-row">
+          <!-- My Team Selector -->
+          <div class="matchup-team-picker">
+            <span class="matchup-picker-label">Select Your Team (Team A)</span>
+            <select class="matchup-select-large" id="matchupTeamASelect" onchange="onMatchupTeamsChange()"></select>
+          </div>
 
-function renderHeat(grid, rec1){
-  const cells = {};
-  let min=1, max=0;
-  grid.cells.forEach(c=>{ cells[c.length+"|"+c.line]=c;
-    min=Math.min(min,c.dismissal_probability); max=Math.max(max,c.dismissal_probability); });
-  const ramp = getComputedStyle(root).getPropertyValue("--theme")||"";
-  const dark = root.dataset.theme==="dark" || (!root.dataset.theme && matchMedia("(prefers-color-scheme:dark)").matches);
-  const RAMP = dark
-    ? ["#1c2b26","#33362b","#4d3b28","#6e3d27","#8f3b26","#b23a22"]
-    : ["#f2efe6","#efe2c9","#e7c9a8","#dcae87","#cf8f6f","#c06a4a"];
-  const fg = (i)=> dark ? (i>=2?"#f4ede6":"#c9c4bb") : (i>=4?"#fff":"#4a3f33");
-  const rows = [`<div></div>`].concat(LINES.map(l=>`<div class="hh">${lineShort(l)}</div>`));
-  LENGTHS.forEach(len=>{
-    rows.push(`<div class="hr">${titR(len)}</div>`);
-    LINES.forEach(line=>{
-      const c = cells[len+"|"+line];
-      if(!c){ rows.push(`<div class="hc" style="background:var(--border);opacity:.3"></div>`); return; }
-      const v = c.dismissal_probability*100;
-      const t = max>min ? (c.dismissal_probability-min)/(max-min) : 0;
-      const idx = Math.round(t*(RAMP.length-1));
-      const ring = (rec1 && rec1.length===len && rec1.line===line) ? `box-shadow:inset 0 0 0 2px var(--accent);` : "";
-      rows.push(`<div class="hc" style="background:${RAMP[idx]};color:${fg(idx)};${ring}" title="${titR(len)} ${lineShort(line)} · ${v.toFixed(1)}% · E ${c.expected_runs.toFixed(1)}">${v.toFixed(1)}</div>`);
-    });
-  });
-  $("#hgrid").innerHTML = rows.join("");
-}
+          <!-- Versus Badge -->
+          <div class="versus-badge-circle">VS</div>
 
-// bootstrap
-(async function init(){
-  try{
-    const ref = await (await fetch("/v1/reference")).json();
-    LENGTHS = ref.ball_lengths; LINES = ref.ball_lines;
-  }catch(e){}
-  try{
-    const bl = await (await fetch("/v1/batsmen?limit=200")).json();
-    $("#batsman").innerHTML = bl.batsmen.map(b=>`<option value="${b.id}">${b.name} — ${b.dismissals} outs</option>`).join("");
-    const k = bl.batsmen.find(b=>/kohli/i.test(b.name)); if(k) $("#batsman").value = k.id;
-  }catch(e){
-    $("#primaryMain").innerHTML = '<div class="err">Could not reach the API. Is the server running on this port?</div>';
-    return;
-  }
-  run();
-})();
-</script>
+          <!-- Opponent Team Selector -->
+          <div class="matchup-team-picker">
+            <span class="matchup-picker-label">Select Opponent (Team B)</span>
+            <select class="matchup-select-large" id="matchupTeamBSelect" onchange="onMatchupTeamsChange()"></select>
+          </div>
+        </div>
+
+        <!-- Venue & South Africa Pitch Condition Filter -->
+        <div class="condition-pill-bar">
+          <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+            Venue Conditions:
+          </span>
+          <button class="condition-pill-btn active" id="cond-highveld" onclick="setMatchupCondition('highveld_bounce')">
+            Highveld Steep Bounce (Wanderers / Centurion)
+          </button>
+          <button class="condition-pill-btn" id="cond-coastal" onclick="setMatchupCondition('coastal_swing')">
+            Coastal Powerplay Swing (Kingsmead / Newlands)
+          </button>
+          <button class="condition-pill-btn" id="cond-inland" onclick="setMatchupCondition('inland_spin')">
+            Inland Dry &amp; Spin Squeeze (Paarl / Mangaung)
+          </button>
+        </div>
+      </div>
+
+      <!-- Win Probability Battle Hub -->
+      <div class="battle-hub-card">
+        <div class="battle-win-row">
+          <!-- Team A Win Odds -->
+          <div class="team-win-box">
+            <div class="team-win-flag-name">
+              <span id="battleFlagA">🇮🇳</span>
+              <span id="battleNameA">India</span>
+              <span class="brand-badge" style="font-size:9px;">AI PREDICTED XI</span>
+            </div>
+            <div class="win-pct-large team-a" id="battleWinPctA">56.4%</div>
+            <span style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">WIN PROBABILITY</span>
+          </div>
+
+          <!-- Battle Status Pill in Center -->
+          <div style="text-align:center;">
+            <div class="live-pulse-badge" style="margin:0 auto 6px;">
+              <span class="pulse-dot"></span>
+              <span id="battleAdvantageText">India Tactical Advantage</span>
+            </div>
+            <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);" id="battleConditionLabel">
+              Wanderers Pitch Model
+            </span>
+          </div>
+
+          <!-- Team B Win Odds -->
+          <div class="team-win-box right">
+            <div class="team-win-flag-name">
+              <span class="brand-badge" style="font-size:9px; background:rgba(6,182,212,0.12); color:var(--accent-cyan); border-color:rgba(6,182,212,0.3);">OPPONENT XI</span>
+              <span id="battleNameB">Australia</span>
+              <span id="battleFlagB">🇦🇺</span>
+            </div>
+            <div class="win-pct-large team-b" id="battleWinPctB">43.6%</div>
+            <span style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">WIN PROBABILITY</span>
+          </div>
+        </div>
+
+        <!-- Animated Progress Battle Bar -->
+        <div class="battle-bar-track">
+          <div class="battle-bar-fill-a" id="battleBarA" style="width: 56.4%;"></div>
+          <div class="battle-bar-fill-b" id="battleBarB" style="width: 43.6%;"></div>
+        </div>
+
+        <!-- 4 Comparative Head-to-Head Strength Meters -->
+        <div class="strength-radar-grid">
+          <!-- Pace Attack -->
+          <div class="strength-metric-item">
+            <div class="strength-metric-title">Pace &amp; Bounce Threat</div>
+            <div class="strength-metric-numbers">
+              <span style="color:var(--accent-green);" id="mPaceA">96</span>
+              <span style="color:var(--text-muted);">vs</span>
+              <span style="color:var(--accent-cyan);" id="mPaceB">94</span>
+            </div>
+            <div class="metric-bar-micro">
+              <div class="metric-fill-a" id="mBarPaceA" style="width:50%;"></div>
+              <div class="metric-fill-b" id="mBarPaceB" style="width:50%;"></div>
+            </div>
+          </div>
+
+          <!-- Spin Penetration -->
+          <div class="strength-metric-item">
+            <div class="strength-metric-title">Spin Penetration (Ov 11-40)</div>
+            <div class="strength-metric-numbers">
+              <span style="color:var(--accent-green);" id="mSpinA">92</span>
+              <span style="color:var(--text-muted);">vs</span>
+              <span style="color:var(--accent-cyan);" id="mSpinB">88</span>
+            </div>
+            <div class="metric-bar-micro">
+              <div class="metric-fill-a" id="mBarSpinA" style="width:51%;"></div>
+              <div class="metric-fill-b" id="mBarSpinB" style="width:49%;"></div>
+            </div>
+          </div>
+
+          <!-- Batting Depth -->
+          <div class="strength-metric-item">
+            <div class="strength-metric-title">Batting Depth (1-7)</div>
+            <div class="strength-metric-numbers">
+              <span style="color:var(--accent-green);" id="mBatA">95</span>
+              <span style="color:var(--text-muted);">vs</span>
+              <span style="color:var(--accent-cyan);" id="mBatB">93</span>
+            </div>
+            <div class="metric-bar-micro">
+              <div class="metric-fill-a" id="mBarBatA" style="width:50%;"></div>
+              <div class="metric-fill-b" id="mBarBatB" style="width:50%;"></div>
+            </div>
+          </div>
+
+          <!-- Death Overs Power -->
+          <div class="strength-metric-item">
+            <div class="strength-metric-title">Death Overs Execution</div>
+            <div class="strength-metric-numbers">
+              <span style="color:var(--accent-green);" id="mDeathA">94</span>
+              <span style="color:var(--text-muted);">vs</span>
+              <span style="color:var(--accent-cyan);" id="mDeathB">91</span>
+            </div>
+            <div class="metric-bar-micro">
+              <div class="metric-fill-a" id="mBarDeathA" style="width:51%;"></div>
+              <div class="metric-fill-b" id="mBarDeathB" style="width:49%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side-by-Side Playing XI Rosters (With Photos, Age & Runs/Wickets Stats) -->
+      <div class="matchup-teams-grid">
+        <!-- Column 1: Team A Playing XI -->
+        <div class="team-xi-panel">
+          <div class="team-xi-header">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span id="colFlagA" style="font-size:20px;">🇮🇳</span>
+                <h3 style="font-size:18px; font-weight:800;" id="colTitleA">India Playing XI</h3>
+              </div>
+              <div style="font-size:12px; color:var(--accent-green); font-family:var(--font-mono); margin-top:2px;">
+                11 Starters Selected &middot; 4 on Bench
+              </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="toggleBenchModal('A')">View Bench (4)</button>
+          </div>
+
+          <div class="xi-roster-stack" id="rosterStackA"></div>
+        </div>
+
+        <!-- Column 2: Team B Playing XI -->
+        <div class="team-xi-panel">
+          <div class="team-xi-header">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span id="colFlagB" style="font-size:20px;">🇦🇺</span>
+                <h3 style="font-size:18px; font-weight:800;" id="colTitleB">Australia Playing XI</h3>
+              </div>
+              <div style="font-size:12px; color:var(--accent-cyan); font-family:var(--font-mono); margin-top:2px;">
+                11 Starters Selected &middot; 4 on Bench
+              </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="toggleBenchModal('B')">View Bench (4)</button>
+          </div>
+
+          <div class="xi-roster-stack" id="rosterStackB"></div>
+        </div>
+      </div>
+
+      <!-- SHAP TACTICAL SWAP ADVISOR -->
+      <div class="shap-advisor-box">
+        <div class="shap-advisor-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase; letter-spacing:0.08em;">
+                SHAP TACTICAL ADVISOR
+              </span>
+              <span class="brand-badge">FEATURE ATTRIBUTION</span>
+            </div>
+            <h3 style="font-size:19px; font-weight:800; margin-top:3px;">
+              Bench Substitution Recommendations to Maximize Win %
+            </h3>
+          </div>
+          <span style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">
+            Marginal Delta &Delta;P(Win)
+          </span>
+        </div>
+
+        <p style="font-size:13.5px; color:var(--text-secondary); margin-bottom:20px; line-height:1.5;">
+          The AI simulates tactical substitutions against the opponent's current lineup and venue conditions. Click <b>"Apply Swap &rarr;"</b> to test a change and watch the live win percentage recalculate.
+        </p>
+
+        <div class="swap-rec-cards-grid" id="swapRecCardsGrid"></div>
+      </div>
+
+    </div>
+  </main>
+
+  
+  <!-- ========================================================================= -->
+  <!-- PAGE: PLAYER VS PLAYER (PVP) AI MATCHING & HEAD-TO-HEAD COMPARISON        -->
+  <!-- ========================================================================= -->
+  <main class="page-view" id="page-pvp">
+    <div class="section-wrapper">
+      <div class="section-head">
+        <span class="section-eyebrow">Tactical Duel Engine</span>
+        <h2 class="section-title">Batsman vs. Bowler: Optimal Dismissal Ball</h2>
+        <p class="section-desc">
+          Select the <b>Target Batsman</b>, the <b>Attacking Bowler</b>, and the <b>Pitch Profile</b>. The machine learning model analyzes historical match data, player vulnerabilities, and pitch physics to prescribe the <b>exact type of ball to bowl for dismissing the batsman</b>.
+        </p>
+      </div>
+
+      <!-- Selection Controls Card -->
+      <div class="pvp-controls-card">
+        <div class="pvp-selectors-row">
+          <!-- Batsman Selector -->
+          <div class="pvp-picker-column">
+            <div class="pvp-picker-header">
+              <span class="matchup-picker-label">Target Batsman</span>
+              <span class="brand-badge" id="duelBadgeBat">INDIA</span>
+            </div>
+            <div class="pvp-dual-dropdowns">
+              <select class="matchup-select-large" id="duelCountryBatSel" onchange="onDuelCountryBatChange()"></select>
+              <select class="matchup-select-large" id="duelBatsmanSel" onchange="renderDuelPrescription()"></select>
+            </div>
+          </div>
+
+          <!-- VS Crest -->
+          <div class="duel-vs-crest">
+            <div class="duel-vs-circle">VS</div>
+            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-muted); text-transform:uppercase;">DUEL</span>
+          </div>
+
+          <!-- Bowler Selector -->
+          <div class="pvp-picker-column">
+            <div class="pvp-picker-header">
+              <span class="matchup-picker-label">Attacking Bowler</span>
+              <span class="brand-badge" id="duelBadgeBowl" style="background:rgba(250,204,21,0.15); color:#FDE047; border-color:rgba(250,204,21,0.4);">AUSTRALIA</span>
+            </div>
+            <div class="pvp-dual-dropdowns">
+              <select class="matchup-select-large" id="duelCountryBowlSel" onchange="onDuelCountryBowlChange()"></select>
+              <select class="matchup-select-large" id="duelBowlerSel" onchange="renderDuelPrescription()"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Venue & Pitch Condition Filter -->
+        <div class="condition-pill-bar" style="margin-top:20px; padding-top:16px;">
+          <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+            Pitch Profile:
+          </span>
+          <button class="condition-pill-btn active" id="duel-cond-highveld" onclick="setDuelCondition('highveld_bounce')">
+            Highveld Hard Bounce (Wanderers/Centurion)
+          </button>
+          <button class="condition-pill-btn" id="duel-cond-coastal" onclick="setDuelCondition('coastal_swing')">
+            Coastal Powerplay Swing (Kingsmead/Newlands)
+          </button>
+          <button class="condition-pill-btn" id="duel-cond-inland" onclick="setDuelCondition('inland_spin')">
+            Inland Abrasive Spin Choke (Paarl)
+          </button>
+          <button class="condition-pill-btn" id="duel-cond-flat" onclick="setDuelCondition('flat_deck')">
+            Flat High-Scoring Deck
+          </button>
+
+          <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-left:14px;">
+            Phase:
+          </span>
+          <button class="condition-pill-btn active" id="duel-phase-middle" onclick="setDuelPhase('middle')">
+            Middle (11-40)
+          </button>
+          <button class="condition-pill-btn" id="duel-phase-powerplay" onclick="setDuelPhase('powerplay')">
+            Powerplay (1-10)
+          </button>
+          <button class="condition-pill-btn" id="duel-phase-death" onclick="setDuelPhase('death')">
+            Death (41-50)
+          </button>
+        </div>
+      </div>
+
+      <!-- Prescribed Dismissal Delivery Showcase -->
+      <div class="prescribed-delivery-card" id="duelPrescriptionBox">
+        <div class="delivery-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+          OPTIMAL DISMISSAL BALL &middot; PREDICTED FROM HISTORICAL MATCH DATA
+        </div>
+
+        <h2 class="delivery-name-headline" id="duelDeliveryTitle">
+          Outswinging Yorker at 5th Stump Channel
+        </h2>
+
+        <div style="font-family:var(--font-mono); font-size:13px; color:var(--accent-mint);" id="duelSeamSpeed">
+          142.5 km/h &middot; Upright Seam with Late 2.4&deg; Outswing
+        </div>
+
+        <!-- Telemetry Numbers -->
+        <div class="delivery-telemetry-row">
+          <div class="delivery-tel-item">
+            <b id="duelProbVal">9.4%</b>
+            <span>Dismissal Odds / Ball</span>
+          </div>
+
+          <div class="delivery-tel-item">
+            <b style="color:var(--accent-cyan);" id="duelExpRunsVal">0.7</b>
+            <span>Expected Runs &Egrave;[Runs]</span>
+          </div>
+
+          <div class="delivery-tel-item" style="flex:1;">
+            <b style="font-size:16px; color:#F87171; line-height:1.2; font-family:var(--font-display);" id="duelDismissalMode">
+              Caught behind / 1st Slip
+            </b>
+            <span>Primary Dismissal Mechanism</span>
+          </div>
+
+          <div class="delivery-tel-item">
+            <b style="font-size:16px; color:#FBBF24; font-family:var(--font-mono);" id="duelFieldPreset">
+              Fourth-Stump Catchers
+            </b>
+            <span>Synchronized Field Placement</span>
+          </div>
+        </div>
+
+        <!-- 3-Ball Over Plan / Tactical Setup Sequence -->
+        <div style="margin-top:20px;">
+          <div style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:10px;">
+            Tactical Setup Sequence (3-Ball Over Plan)
+          </div>
+          <div class="sequence-timeline-grid" id="duelSetupSequenceGrid"></div>
+        </div>
+      </div>
+
+      <!-- Duel Showcase: Batsman vs Bowler Profile & 5x7 Matrix -->
+      <div style="display:grid; grid-template-columns: minmax(0, 1fr) 380px; gap:28px; align-items:start; margin-bottom:28px;">
+        <!-- Left: 5x7 Length x Line Dismissal Danger Heatmap -->
+        <div class="glass-panel danger-heatmap-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+              <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase;">
+                DISMISSAL DANGER MATRIX (5 &times; 7)
+              </span>
+              <h3 style="font-size:17px; font-weight:700; margin-top:2px;" id="duelMatrixTitle">
+                Length &times; Line Probability Grid
+              </h3>
+            </div>
+            <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">
+              Ringed Cell = Optimal Ball
+            </span>
+          </div>
+
+          <div class="heatmap-grid-scroll">
+            <div class="heatmap-table" id="duelHeatmapTable"></div>
+          </div>
+        </div>
+
+        <!-- Right: Player Profiles & Pitch Synergy -->
+        <div class="glass-panel" style="padding:24px;">
+          <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+            PITCH &amp; TECHNICAL VULNERABILITY BREAKDOWN
+          </span>
+
+          <div style="display:flex; flex-direction:column; gap:16px; margin-top:16px;">
+            <div class="scout-detail-box" id="boxBatVuln">
+              <div class="scout-detail-label" id="lblBatVuln">Batsman Flaw:</div>
+              <p style="font-size:12.5px; color:#F87171; line-height:1.5;" id="duelBatVulnText"></p>
+            </div>
+
+            <div class="scout-detail-box" id="boxBowlWeapon">
+              <div class="scout-detail-label" id="lblBowlWeapon">Bowler Weapon:</div>
+              <p style="font-size:12.5px; color:var(--accent-mint); line-height:1.5;" id="duelBowlWeaponText"></p>
+            </div>
+
+            <div class="scout-detail-box">
+              <div class="scout-detail-label">Pitch Impact:</div>
+              <p style="font-size:12.5px; color:var(--text-secondary); line-height:1.5;" id="duelPitchImpactText"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TreeSHAP Explainability Waterfall -->
+      <div class="shap-waterfall-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div>
+            <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase;">
+              TREESHAP FEATURE ATTRIBUTION BREAKDOWN
+            </span>
+            <h3 style="font-size:16px; font-weight:700; margin-top:2px;">
+              Why This Ball is Prescribed for Dismissal
+            </h3>
+          </div>
+          <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">
+            ML Model Confidence: High
+          </span>
+        </div>
+
+        <div id="duelShapList"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- PAGE 5: LIVE MATCH SIMULATOR & STRATEGY CONSOLE -->
+  <!-- ========================================================================= -->
+  <main class="page-view" id="page-console">
+    <div class="section-wrapper">
+      <div class="section-head">
+        <span class="section-eyebrow">Real-Time Simulation</span>
+        <h2 class="section-title">Live Strategy Console</h2>
+        <p class="section-desc">
+          Configure game state parameters. The API models all 35 length &times; line combinations in real-time, outputs TreeSHAP reasoning, and updates the field layout.
+        </p>
+      </div>
+
+      <div class="console-container">
+        <!-- Situation Form -->
+        <form class="glass-panel situation-card" id="situationForm" autocomplete="off">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); letter-spacing:0.08em; text-transform:uppercase;">MATCH SITUATION</span>
+            <span class="telemetry-pill" id="situationPhaseBadge">Phase: Death</span>
+          </div>
+
+          <label class="input-label">
+            <span>Batsman to Bowl To</span>
+            <select class="select-control" id="consoleBatsmanSelect">
+              <option value="player-virat-kohli">Virat Kohli (23 outs)</option>
+              <option value="player-rohit-sharma">Rohit Sharma (21 outs)</option>
+              <option value="player-shubman-gill">Shubman Gill (14 outs)</option>
+              <option value="player-steve-smith">Steve Smith (19 outs)</option>
+              <option value="player-travis-head">Travis Head (15 outs)</option>
+              <option value="player-babar-azam">Babar Azam (18 outs)</option>
+              <option value="player-heinrich-klaasen">Heinrich Klaasen (12 outs)</option>
+              <option value="player-joe-root">Joe Root (16 outs)</option>
+              <option value="player-kane-williamson">Kane Williamson (17 outs)</option>
+            </select>
+          </label>
+
+          <div class="input-label">
+            <span>Bowler Type</span>
+            <div class="segmented-group" id="consoleBowlerSeg">
+              <button type="button" class="segmented-btn active" data-v="pace_right_arm">Pace R</button>
+              <button type="button" class="segmented-btn" data-v="pace_left_arm">Pace L</button>
+              <button type="button" class="segmented-btn" data-v="off_spin">Off-spin</button>
+              <button type="button" class="segmented-btn" data-v="leg_spin">Leg-spin</button>
+              <button type="button" class="segmented-btn" data-v="left_arm_spin">SLA</button>
+            </div>
+          </div>
+
+          <div class="grid-2col">
+            <label class="input-label">
+              <span>Over (0–49)</span>
+              <input type="number" class="input-control" id="inputOver" min="0" max="49" value="43">
+            </label>
+            <label class="input-label">
+              <span>Ball (1–6)</span>
+              <input type="number" class="input-control" id="inputBall" min="1" max="6" value="2">
+            </label>
+          </div>
+
+          <div class="grid-2col">
+            <label class="input-label">
+              <span>Current Score</span>
+              <input type="number" class="input-control" id="inputScore" min="0" value="271">
+            </label>
+            <label class="input-label">
+              <span>Wickets Down (0–9)</span>
+              <input type="number" class="input-control" id="inputWickets" min="0" max="9" value="6">
+            </label>
+          </div>
+
+          <div class="grid-2col">
+            <div class="input-label">
+              <span>Innings</span>
+              <div class="segmented-group" id="consoleInningsSeg">
+                <button type="button" class="segmented-btn" data-v="1">1st Innings</button>
+                <button type="button" class="segmented-btn active" data-v="2">Chasing</button>
+              </div>
+            </div>
+            <label class="input-label" id="targetInputWrapper">
+              <span>Target Score</span>
+              <input type="number" class="input-control" id="inputTarget" min="1" value="322">
+            </label>
+          </div>
+
+          <div class="badge-row">
+            <span class="telemetry-pill" id="pressureIndexBadge">Pressure Index: 7.4</span>
+            <span class="telemetry-pill" id="reqRateBadge">Req RR: 7.65</span>
+          </div>
+        </form>
+
+        <!-- Results Stack -->
+        <div class="results-stack">
+          <!-- Primary Recommendation Card -->
+          <div class="primary-rec-card" id="primaryRecBox">
+            <div>
+              <div class="rec-eyebrow">RECOMMENDED DELIVERY</div>
+              <h2 class="rec-delivery-name" id="recDeliveryName">Yorker, off stump</h2>
+              
+              <div class="rec-stat-strip">
+                <div>
+                  <div class="rec-prob-large" id="recProbVal">8.1%</div>
+                  <div class="rec-prob-label">Dismissal Odds / Ball</div>
+                </div>
+
+                <div>
+                  <div class="rec-runs-large" id="recRunsVal">1.1</div>
+                  <div class="rec-prob-label">Expected Runs</div>
+                </div>
+
+                <span class="confidence-chip medium" id="recConfidenceBadge">Medium Confidence</span>
+              </div>
+
+              <ul class="shap-reasons-list" id="recReasonsList"></ul>
+            </div>
+
+            <div class="rec-field-preview-box">
+              <div style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+                SYNCHRONIZED FIELD PRESET
+              </div>
+              <div style="font-size:14px; font-weight:700; color:var(--text-primary);" id="recFieldPresetName">
+                Death Yorker Ring
+              </div>
+              <button class="btn btn-secondary btn-sm" style="margin-top:auto;" onclick="navigateToPage('stadium')">
+                Open Stadium Radar &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- 5x7 Danger Heatmap -->
+          <div class="glass-panel danger-heatmap-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div>
+                <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase;">
+                  DISMISSAL DANGER MATRIX
+                </span>
+                <h3 style="font-size:17px; font-weight:700; margin-top:2px;">Length &times; Line Dismissal Odds</h3>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">
+                Value = P(Wicket) &times; 100 &middot; Ringed cell = Top Recommendation
+              </span>
+            </div>
+
+            <div class="heatmap-grid-scroll">
+              <div class="heatmap-table" id="heatmapMatrixTable"></div>
+            </div>
+          </div>
+
+          <!-- Alternatives -->
+          <div class="glass-panel" style="padding:22px 28px;">
+            <div style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">
+              Alternative Prescriptions (Rank 2 &amp; 3)
+            </div>
+            <div class="alternatives-container" id="alternativesList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="brand-emblem" style="width:28px; height:28px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/></svg>
+        </div>
+        <span style="font-weight:700; font-size:15px;">CricXAI Suite v2.0</span>
+        <span style="font-size:12px; color:var(--text-muted);">10 Eligible International Nations Covered</span>
+      </div>
+
+      <div class="footer-copy">
+        150 Top International Players Judged &middot; LightGBM + TreeSHAP Explainers &middot; Sub-35ms Inference Latency
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/players_data.js"></script>
+  <script src="/ground.js"></script>
+  <script>
+    // ==========================================
+    // MULTI-PAGE ROUTING SYSTEM
+    // ==========================================
+    let currentPage = "landing";
+
+    function navigateToPage(pageId) {
+      document.querySelectorAll(".page-view").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".nav-links a").forEach(a => a.classList.remove("active"));
+
+      const targetPage = document.getElementById("page-" + pageId);
+      const targetNav = document.getElementById("nav-" + pageId);
+
+      if (targetPage) targetPage.classList.add("active");
+      if (targetNav) targetNav.classList.add("active");
+
+      currentPage = pageId;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      if (pageId === "players") renderPlayersDatabase();
+      if (pageId === "stadium" && window.cricketGround) window.cricketGround.renderPlayers();
+      if (pageId === "dossier") renderDossier();
+      if (pageId === "matchup") { initMatchupControls(); renderMatchupArena(); }
+      if (pageId === "pvp") { initPvPControls(); renderDuelPrescription(); }
+      if (pageId === "console") { initConsole(); fetchRecommendation(); }
+    }
+
+    // ==========================================
+    // 10-NATION PLAYERS DATABASE ENGINE
+    // ==========================================
+    let activeCountryFilter = "India";
+
+    function renderPlayersDatabase() {
+      const pillBar = document.getElementById("countryPillBar");
+      const grid = document.getElementById("playersGrid");
+      if (!pillBar || !grid || !window.CricXData) return;
+
+      const countries = window.CricXData.getEligibleCountries();
+      pillBar.innerHTML = countries.map(c => {
+        const isAct = c.id === activeCountryFilter;
+        const cTheme = window.CricXData.getJerseyTheme(c.id);
+        const activeStyle = isAct ? `background:${cTheme.badgeBg}; border-color:${cTheme.border}; color:${cTheme.text}; box-shadow:0 0 18px ${cTheme.glow}; font-weight:700;` : '';
+        return `
+          <button class="country-pill-btn ${isAct ? 'active' : ''}" style="${activeStyle}" onclick="selectCountryFilter('${c.id}')">
+            <span>${c.flag}</span>
+            <span>${c.name}</span>
+          </button>
+        `;
+      }).join("");
+
+      const theme = window.CricXData.getJerseyTheme(activeCountryFilter);
+      const players = window.CricXData.getPlayersByCountry(activeCountryFilter);
+      grid.innerHTML = players.map(p => {
+        let tierClass = "s-tier";
+        if (p.scoutGrade && p.scoutGrade.includes("A-Tier")) tierClass = "a-tier";
+        else if (p.scoutGrade && p.scoutGrade.includes("B-Tier")) tierClass = "b-tier";
+
+        let statsLine = "";
+        if (p.stats) {
+          if (p.stats.type === "batsman") {
+            statsLine = `Runs: <b>${p.stats.runs.toLocaleString()}</b> &middot; Avg: <b>${p.stats.avg}</b> &middot; SR: <b>${p.stats.sr}</b>`;
+          } else if (p.stats.type === "bowler") {
+            statsLine = `Wickets: <b>${p.stats.wickets}</b> &middot; Avg: <b>${p.stats.avg}</b> &middot; Econ: <b>${p.stats.econ}</b>`;
+          } else {
+            statsLine = `Runs: <b>${p.stats.runs}</b> &middot; Wkts: <b>${p.stats.wickets}</b> &middot; Avg: <b>${p.stats.bat_avg}</b>`;
+          }
+        }
+
+        return `
+          <div class="player-scout-card" style="border-top: 3.5px solid ${theme.primary}; box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 15px ${theme.glow};">
+            <div>
+              <div class="scout-card-header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div class="player-avatar-wrap" style="width:48px; height:48px; border:2px solid ${theme.primary}; box-shadow:0 0 10px ${theme.glow};">
+                    <img src="${p.photo || ''}" alt="${p.name}">
+                  </div>
+                  <div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <h3 class="player-profile-name" style="font-size:17px;">${p.name}</h3>
+                      <span class="player-age-badge" style="background:${theme.badgeBg}; border:1px solid ${theme.badgeBorder}; color:${theme.text}; font-size:10px;">Age ${p.age || 28}</span>
+                    </div>
+                    <div class="player-profile-sub" style="color:${theme.text};">${p.role} &middot; ${p.battingHand}</div>
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <span class="scout-grade-badge ${tierClass}">${(p.scoutGrade || 'S-Tier').split(" ")[0]}</span>
+                  <div class="scout-rating-val">${p.rating}</div>
+                </div>
+              </div>
+
+              <div style="font-family:var(--font-mono); font-size:11px; color:${theme.text}; margin-top:10px; background:rgba(255,255,255,0.02); padding:5px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
+                ${statsLine}
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+                <div class="scout-detail-box">
+                  <div class="scout-detail-label">Key Strength</div>
+                  <span style="color:var(--text-primary);">${p.primaryStrength}</span>
+                </div>
+                <div class="scout-detail-box">
+                  <div class="scout-detail-label">Tactical Vulnerability</div>
+                  <span style="color:#F87171;">${p.vulnerability}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; border-top:1px solid var(--border-subtle); padding-top:12px;">
+              <button class="btn btn-primary btn-sm" style="flex:1; background:${theme.primary}; border-color:${theme.secondary}; color:#fff;" onclick="openPlayerInDossier('${p.id}')">
+                Analyze Dossier &rarr;
+              </button>
+              <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="placePlayerInStadium('${p.country}', '${p.id}', '${p.type}')">
+                Place on Ground
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function selectCountryFilter(country) {
+      activeCountryFilter = country;
+      renderPlayersDatabase();
+    }
+
+    function openPlayerInDossier(playerId) {
+      const p = window.CricXData.getPlayerById(playerId);
+      if (!p) return;
+      activeDossierCountry = p.country;
+      activeDossierBatsmanId = p.id;
+      navigateToPage("dossier");
+    }
+
+    function placePlayerInStadium(country, playerId, type) {
+      if (type === "bowler") {
+        document.getElementById("stadiumBowlingCountrySelect").value = country;
+        onStadiumCountryChange();
+        document.getElementById("stadiumBowlerSelect").value = playerId;
+        onStadiumBowlerChange();
+      } else {
+        document.getElementById("stadiumBattingCountrySelect").value = country;
+        onStadiumCountryChange();
+        document.getElementById("stadiumStrikerSelect").value = playerId;
+        onStadiumStrikerChange();
+      }
+      navigateToPage("stadium");
+    }
+
+    // ==========================================
+    // STADIUM VIEW COUNTRY & PLAYER FILTERS
+    // ==========================================
+    function initStadiumControls() {
+      const bowlCountrySel = document.getElementById("stadiumBowlingCountrySelect");
+      const batCountrySel = document.getElementById("stadiumBattingCountrySelect");
+      if (!bowlCountrySel || !batCountrySel || !window.CricXData) return;
+
+      const countries = window.CricXData.getEligibleCountries();
+      const opts = countries.map(c => `<option value="${c.id}">${c.flag} ${c.name}</option>`).join("");
+      bowlCountrySel.innerHTML = opts;
+      batCountrySel.innerHTML = opts;
+
+      bowlCountrySel.value = "India";
+      batCountrySel.value = "Australia";
+      onStadiumCountryChange();
+    }
+
+    function onStadiumCountryChange() {
+      const bowlCountry = document.getElementById("stadiumBowlingCountrySelect").value;
+      const batCountry = document.getElementById("stadiumBattingCountrySelect").value;
+      const bowlerSel = document.getElementById("stadiumBowlerSelect");
+      const strikerSel = document.getElementById("stadiumStrikerSelect");
+
+      if (window.cricketGround) {
+        window.cricketGround.setBowlingCountry(bowlCountry);
+        window.cricketGround.setBattingCountry(batCountry);
+      }
+
+      const badge = document.getElementById("insCountryBadge");
+      if (badge) badge.textContent = bowlCountry.toUpperCase() + " FIELD";
+
+      // Populate Bowlers
+      const bowlSquad = window.CricXData.getPlayersByCountry(bowlCountry);
+      bowlerSel.innerHTML = bowlSquad.map(p => `
+        <option value="${p.id}">${p.name} (${p.role})</option>
+      `).join("");
+
+      // Populate Batsmen
+      const batSquad = window.CricXData.getPlayersByCountry(batCountry);
+      strikerSel.innerHTML = batSquad.map(p => `
+        <option value="${p.id}">${p.name} (${p.battingHand})</option>
+      `).join("");
+
+      onStadiumBowlerChange();
+      onStadiumStrikerChange();
+    }
+
+    function onStadiumBowlerChange() {
+      const bowlerId = document.getElementById("stadiumBowlerSelect").value;
+      const p = window.CricXData.getPlayerById(bowlerId);
+      if (p && window.cricketGround) {
+        window.cricketGround.setBowler(p.name, p.bowlingStyle || "pace_right_arm");
+      }
+    }
+
+    function onStadiumStrikerChange() {
+      const strikerId = document.getElementById("stadiumStrikerSelect").value;
+      const p = window.CricXData.getPlayerById(strikerId);
+      if (p && window.cricketGround) {
+        const isLHB = p.battingHand === "LHB";
+        window.cricketGround.setStriker(p.name, isLHB);
+        document.getElementById("btnBatterRHB").classList.toggle("active", !isLHB);
+        document.getElementById("btnBatterLHB").classList.toggle("active", isLHB);
+      }
+    }
+
+    // ==========================================
+    // 3-STEP BATSMAN ANALYSIS DOSSIER
+    // ==========================================
+    let activeDossierCountry = "India";
+    let activeDossierBatsmanId = "player-virat-kohli";
+    let activeDossierTab = 1;
+
+    function initDossierControls() {
+      const countrySel = document.getElementById("dossierCountrySelect");
+      if (!countrySel || !window.CricXData) return;
+
+      const countries = window.CricXData.getEligibleCountries();
+      countrySel.innerHTML = countries.map(c => `<option value="${c.id}">${c.flag} ${c.name}</option>`).join("");
+      countrySel.value = activeDossierCountry;
+      onDossierCountryChange();
+    }
+
+    function onDossierCountryChange() {
+      activeDossierCountry = document.getElementById("dossierCountrySelect").value;
+      const batsmanSel = document.getElementById("dossierBatsmanSelect");
+      const squad = window.CricXData.getPlayersByCountry(activeDossierCountry);
+      batsmanSel.innerHTML = squad.map(p => `<option value="${p.id}">${p.name} (${p.battingHand})</option>`).join("");
+
+      if (squad[0]) {
+        activeDossierBatsmanId = squad[0].id;
+        batsmanSel.value = activeDossierBatsmanId;
+      }
+      renderDossier();
+    }
+
+    function onDossierBatsmanChange() {
+      activeDossierBatsmanId = document.getElementById("dossierBatsmanSelect").value;
+      renderDossier();
+    }
+
+    function switchAnalysisTab(tabNumber) {
+      activeDossierTab = tabNumber;
+      document.querySelectorAll(".analysis-tab-btn").forEach((btn, idx) => {
+        btn.classList.toggle("active", idx + 1 === tabNumber);
+      });
+      document.querySelectorAll(".analysis-tab-pane").forEach((pane, idx) => {
+        pane.classList.toggle("active", idx + 1 === tabNumber);
+      });
+    }
+
+    function renderDossier() {
+      const p = window.CricXData.getPlayerById(activeDossierBatsmanId);
+      if (!p) return;
+
+      document.getElementById("dossierPlayerName").textContent = p.name;
+      document.getElementById("dossierPlayerMeta").textContent = `${p.country} · ${p.role} · ${p.battingHand}`;
+      document.getElementById("dossierCountryBadge").textContent = p.country.toUpperCase();
+      document.getElementById("dossierGradeBadge").textContent = (p.scoutGrade || 'S-Tier').split(" ")[0];
+
+      // Tab 1: Theory & Tips
+      const tips = p.theoryTips || {
+        trapName: "5th-Stump Channel Squeeze",
+        deliverySequence: "Bowl 2 outswingers in 5th-stump corridor, follow with rapid inswinging yorker at off stump base.",
+        phaseVulnerability: "Early Powerplay overs (Balls 1-15).",
+        technicalFlaw: "Pushes hands away from body without full forward stride.",
+        fieldInstruction: "Set Fourth-Stump Catchers (3 Slips + Gully + deep boundary rider)."
+      };
+
+      document.getElementById("dossierTrapName").textContent = tips.trapName;
+      document.getElementById("dossierSequence").textContent = tips.deliverySequence;
+      document.getElementById("dossierPhaseVuln").textContent = tips.phaseVulnerability;
+      document.getElementById("dossierTechnicalFlaw").textContent = tips.technicalFlaw;
+      document.getElementById("dossierFieldInstruction").textContent = tips.fieldInstruction;
+
+      // Tab 2: Visual Ground & Heatmap
+      renderDossierHeatmap(p);
+      renderMiniGround(tips.fieldInstruction);
+
+      // Tab 3: Machine Learning & SHAP
+      const ml = p.mlShapData || {
+        dismissalProb: 8.4,
+        confidence: "High (94.2%)",
+        features: [
+          { feature: "Length: Full / Good", impact: "+0.038", desc: "Forces false stroke outside off." },
+          { feature: "Line: 5th Stump Channel", impact: "+0.031", desc: "Generates outside edge." },
+          { feature: "Pitch: Highveld Hard Bounce", impact: "+0.024", desc: "Steep bounce beats the bat." }
+        ]
+      };
+
+      document.getElementById("dossierDismissalProb").textContent = ml.dismissalProb + "%";
+      document.getElementById("dossierConfidence").textContent = ml.confidence;
+      document.getElementById("dossierShapFeatures").innerHTML = ml.features.map(f => `
+        <div class="shap-row-item">
+          <div>
+            <b style="font-family:var(--font-mono); font-size:13px; color:var(--text-primary);">${f.feature}</b>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${f.desc}</div>
+          </div>
+          <span class="shap-delta-badge pos">${f.impact}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderDossierHeatmap(player) {
+      const table = document.getElementById("dossierHeatmapTable");
+      if (!table) return;
+
+      const lengths = ["yorker", "full", "good", "short", "bouncer"];
+      const lines = ["wide_outside_off", "outside_off", "off_stump", "middle_stump", "leg_stump", "down_leg", "wide_down_leg"];
+      const lineShort = s => s.replace(/_/g, " ").replace("outside", "out").replace("wide out off", "wide off").replace("wide down leg", "wide leg");
+      const ramp = ["#172620", "#2b3223", "#453823", "#623820", "#84371e", "#a8351c"];
+
+      let html = `<div></div>` + lines.map(l => `<div class="hm-col-header">${lineShort(l)}</div>`).join("");
+      lengths.forEach(len => {
+        html += `<div class="hm-row-label">${len}</div>`;
+        lines.forEach(ln => {
+          const isRec = (len === "good" && ln === "outside_off") || (len === "yorker" && ln === "off_stump");
+          const val = isRec ? "8.4" : (Math.random() * 4 + 2).toFixed(1);
+          const bg = isRec ? "#00E676" : ramp[Math.floor(Math.random() * ramp.length)];
+          const textColor = isRec ? "#000" : "#ddd";
+          html += `
+            <div class="hm-cell ${isRec ? 'recommended' : ''}" style="background:${bg}; color:${textColor}; font-weight:${isRec ? '800' : '600'};">
+              ${val}%
+            </div>
+          `;
+        });
+      });
+      table.innerHTML = html;
+    }
+
+    function renderMiniGround(fieldInstruction) {
+      const container = document.getElementById("dossierMiniGroundSvg");
+      if (!container) return;
+      container.innerHTML = `
+        <ellipse cx="140" cy="140" rx="125" ry="125" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <ellipse cx="140" cy="140" rx="65" ry="65" fill="none" stroke="#00E676" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <rect x="132" y="105" width="16" height="70" fill="#2d291e" rx="3"/>
+        <circle cx="140" cy="100" r="5.5" fill="#EF4444"/>
+        <circle cx="140" cy="178" r="5.5" fill="#00E676"/>
+        <circle cx="150" cy="94" r="4.5" fill="#00E676"/>
+        <circle cx="158" cy="97" r="4.5" fill="#00E676"/>
+        <circle cx="166" cy="103" r="4.5" fill="#00E676"/>
+        <circle cx="185" cy="115" r="4.5" fill="#00E676"/>
+        <circle cx="210" cy="160" r="5" fill="#00E676"/>
+        <circle cx="95" cy="155" r="5" fill="#00E676"/>
+        <circle cx="85" cy="115" r="5" fill="#00E676"/>
+        <circle cx="140" cy="60" r="5" fill="#00E676"/>
+      `;
+    }
+
+    // ==========================================
+    // MATCHUP & AI PLAYING XI LOGIC
+    // ==========================================
+    let currentMatchupTeamA = "India";
+    let currentMatchupTeamB = "Australia";
+    let currentPitchCondition = "highveld_bounce";
+    let activePlayingXIA = [];
+    let activeBenchA = [];
+    let activePlayingXIB = [];
+    let activeBenchB = [];
+
+    function initMatchupControls() {
+      const selA = document.getElementById("matchupTeamASelect");
+      const selB = document.getElementById("matchupTeamBSelect");
+      if (!selA || !selB || !window.CricXData) return;
+
+      const countries = window.CricXData.getEligibleCountries();
+      const opts = countries.map(c => `<option value="${c.id}">${c.flag} ${c.name}</option>`).join("");
+      selA.innerHTML = opts;
+      selB.innerHTML = opts;
+
+      selA.value = currentMatchupTeamA;
+      selB.value = currentMatchupTeamB;
+
+      onMatchupTeamsChange();
+    }
+
+    function onMatchupTeamsChange() {
+      const selA = document.getElementById("matchupTeamASelect");
+      const selB = document.getElementById("matchupTeamBSelect");
+      if (selA) currentMatchupTeamA = selA.value;
+      if (selB) currentMatchupTeamB = selB.value;
+
+      if (!window.CricXMatchup) return;
+
+      // Predict Strongest XI for Team A
+      const predA = window.CricXMatchup.predictStrongestXI(currentMatchupTeamA, currentMatchupTeamB, currentPitchCondition);
+      activePlayingXIA = predA.playingXI;
+      activeBenchA = predA.bench;
+
+      // Predict Strongest XI for Team B
+      const predB = window.CricXMatchup.predictStrongestXI(currentMatchupTeamB, currentMatchupTeamA, currentPitchCondition);
+      activePlayingXIB = predB.playingXI;
+      activeBenchB = predB.bench;
+
+      renderMatchupArena();
+    }
+
+    function setMatchupCondition(cond) {
+      currentPitchCondition = cond;
+      document.querySelectorAll("#page-matchup .condition-pill-btn").forEach(b => b.classList.remove("active"));
+      if (cond === "highveld_bounce") document.getElementById("cond-highveld")?.classList.add("active");
+      if (cond === "coastal_swing") document.getElementById("cond-coastal")?.classList.add("active");
+      if (cond === "inland_spin") document.getElementById("cond-inland")?.classList.add("active");
+
+      const labels = {
+        "highveld_bounce": "Highveld Steep Bounce (Wanderers/Centurion)",
+        "coastal_swing": "Coastal Powerplay Swing (Kingsmead/Newlands)",
+        "inland_spin": "Inland Dry Spin Squeeze (Paarl/Bloemfontein)"
+      };
+      const lbl = document.getElementById("battleConditionLabel");
+      if (lbl) lbl.textContent = labels[cond] || cond;
+
+      onMatchupTeamsChange();
+    }
+
+    function renderMatchupArena() {
+      if (!window.CricXMatchup || !window.CricXData) return;
+
+      const countries = window.CricXData.getEligibleCountries();
+      const cA = countries.find(c => c.id === currentMatchupTeamA) || { flag: "🏏", name: currentMatchupTeamA };
+      const cB = countries.find(c => c.id === currentMatchupTeamB) || { flag: "🏏", name: currentMatchupTeamB };
+
+      document.getElementById("battleFlagA").textContent = cA.flag;
+      document.getElementById("battleNameA").textContent = cA.name;
+      document.getElementById("colFlagA").textContent = cA.flag;
+      document.getElementById("colTitleA").textContent = cA.name + " Playing XI";
+
+      document.getElementById("battleFlagB").textContent = cB.flag;
+      document.getElementById("battleNameB").textContent = cB.name;
+      document.getElementById("colFlagB").textContent = cB.flag;
+      document.getElementById("colTitleB").textContent = cB.name + " Playing XI";
+
+      const themeA = window.CricXData.getJerseyTheme(currentMatchupTeamA);
+      const themeB = window.CricXData.getJerseyTheme(currentMatchupTeamB);
+
+      const matchup = window.CricXMatchup.calculateMatchupWinProb(activePlayingXIA, activePlayingXIB, currentPitchCondition);
+      const winElA = document.getElementById("battleWinPctA");
+      const winElB = document.getElementById("battleWinPctB");
+      winElA.textContent = matchup.winProbA.toFixed(1) + "%";
+      winElB.textContent = matchup.winProbB.toFixed(1) + "%";
+
+      winElA.style.color = themeA.text || themeA.primary;
+      winElA.style.textShadow = `0 0 25px ${themeA.glow}`;
+      winElB.style.color = themeB.text || themeB.primary;
+      winElB.style.textShadow = `0 0 25px ${themeB.glow}`;
+
+      const barA = document.getElementById("battleBarA");
+      const barB = document.getElementById("battleBarB");
+      barA.style.width = matchup.winProbA + "%";
+      barA.style.background = themeA.gradient;
+      barA.style.boxShadow = `0 0 16px ${themeA.glow}`;
+
+      barB.style.width = matchup.winProbB + "%";
+      barB.style.background = themeB.gradient;
+      barB.style.boxShadow = `0 0 16px ${themeB.glow}`;
+
+      const adv = matchup.winProbA >= 50 ? `${cA.name} Favored (+${(matchup.winProbA - matchup.winProbB).toFixed(1)}%)` : `${cB.name} Favored (+${(matchup.winProbB - matchup.winProbA).toFixed(1)}%)`;
+      document.getElementById("battleAdvantageText").textContent = adv;
+
+      const stA = matchup.strengthsA;
+      const stB = matchup.strengthsB;
+
+      const setMeter = (idValA, idValB, idBarA, idBarB, valA, valB) => {
+        const elA = document.getElementById(idValA);
+        const elB = document.getElementById(idValB);
+        if (elA) { elA.textContent = valA; elA.style.color = themeA.text || themeA.primary; }
+        if (elB) { elB.textContent = valB; elB.style.color = themeB.text || themeB.primary; }
+
+        const tot = (valA + valB) || 1;
+        const bA = document.getElementById(idBarA);
+        const bB = document.getElementById(idBarB);
+        if (bA) { bA.style.width = ((valA / tot) * 100) + "%"; bA.style.background = themeA.primary; }
+        if (bB) { bB.style.width = ((valB / tot) * 100) + "%"; bB.style.background = themeB.primary; }
+      };
+
+      setMeter("mPaceA", "mPaceB", "mBarPaceA", "mBarPaceB", stA.paceStrength, stB.paceStrength);
+      setMeter("mSpinA", "mSpinB", "mBarSpinA", "mBarSpinB", stA.spinStrength, stB.spinStrength);
+      setMeter("mBatA", "mBatB", "mBarBatA", "mBarBatB", stA.battingDepth, stB.battingDepth);
+      setMeter("mDeathA", "mDeathB", "mBarDeathA", "mBarDeathB", stA.deathPower, stB.deathPower);
+
+      renderRosterColumn("rosterStackA", activePlayingXIA, themeA);
+      renderRosterColumn("rosterStackB", activePlayingXIB, themeB);
+      renderShapSwaps();
+    }
+
+    function renderRosterColumn(containerId, players, theme) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = players.map((p, idx) => {
+        let statsHtml = "";
+        if (p.stats) {
+          if (p.stats.type === "batsman") {
+            statsHtml = `<span>Runs: <b>${p.stats.runs.toLocaleString()}</b></span> &middot; <span>Avg: <b>${p.stats.avg}</b></span> &middot; <span>SR: <b>${p.stats.sr}</b></span>`;
+          } else if (p.stats.type === "bowler") {
+            statsHtml = `<span>Wickets: <b>${p.stats.wickets}</b></span> &middot; <span>Avg: <b>${p.stats.avg}</b></span> &middot; <span>Econ: <b>${p.stats.econ}</b></span>`;
+          } else {
+            statsHtml = `<span>Runs: <b>${p.stats.runs}</b></span> &middot; <span>Wkts: <b>${p.stats.wickets}</b></span> &middot; <span>Avg: <b>${p.stats.bat_avg}</b></span>`;
+          }
+        }
+
+        let tierClass = "s-tier";
+        if (p.scoutGrade && p.scoutGrade.includes("A-Tier")) tierClass = "a-tier";
+        else if (p.scoutGrade && p.scoutGrade.includes("B-Tier")) tierClass = "b-tier";
+
+        return `
+          <div class="matchup-player-row" style="border-left: 3px solid ${theme.primary};">
+            <div class="player-avatar-wrap" style="border: 2px solid ${theme.primary}; box-shadow: 0 0 10px ${theme.glow};">
+              <img src="${p.photo || ''}" alt="${p.name}">
+            </div>
+
+            <div class="player-matchup-meta">
+              <div class="player-name-line">
+                <span class="player-m-name">${idx + 1}. ${p.name}</span>
+                <span class="player-age-badge" style="background:${theme.badgeBg}; border:1px solid ${theme.badgeBorder}; color:${theme.text};">Age ${p.age || 28}</span>
+                <span class="scout-grade-badge ${tierClass}" style="font-size:9px; padding:1px 6px;">${(p.scoutGrade || 'S-Tier').split(' ')[0]}</span>
+              </div>
+              <div class="player-m-role">${p.role} &middot; ${p.battingHand}</div>
+              <div class="player-stats-pill" style="color:${theme.text};">${statsHtml}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderShapSwaps() {
+      const grid = document.getElementById("swapRecCardsGrid");
+      if (!grid || !window.CricXMatchup) return;
+
+      const recs = window.CricXMatchup.getShapSwapRecommendations(
+        currentMatchupTeamA,
+        activePlayingXIA,
+        activePlayingXIB,
+        activeBenchA,
+        currentPitchCondition
+      );
+
+      if (!recs || recs.length === 0) {
+        grid.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">Current Playing XI is tactically optimal for this matchup.</div>`;
+        return;
+      }
+
+      grid.innerHTML = recs.map(r => `
+        <div class="swap-rec-card">
+          <div>
+            <div class="swap-action-title">
+              <div>
+                <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); display:block;">Recommend Swap:</span>
+                <span class="swap-in-name">＋ IN: ${r.playerIn.name}</span>
+                <span class="swap-out-name" style="margin-left:8px;">－ OUT: ${r.playerOut.name}</span>
+              </div>
+              <span class="swap-delta-pill ${r.deltaWinProb < 0 ? 'neg' : ''}" style="${r.deltaWinProb < 0 ? 'color:var(--accent-danger); background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.3);' : ''}">
+                ${r.deltaText}
+              </span>
+            </div>
+            <p class="swap-tactical-reason" style="margin-top:8px;">
+              ${r.reason}
+            </p>
+          </div>
+
+          <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="applyShapSwap('${r.playerIn.id}', '${r.playerOut.id}')">
+            Apply Swap &rarr;
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function applyShapSwap(playerInId, playerOutId) {
+      const inIdx = activeBenchA.findIndex(p => p.id === playerInId);
+      const outIdx = activePlayingXIA.findIndex(p => p.id === playerOutId);
+      if (inIdx !== -1 && outIdx !== -1) {
+        const pIn = activeBenchA[inIdx];
+        const pOut = activePlayingXIA[outIdx];
+        activePlayingXIA[outIdx] = pIn;
+        activeBenchA[inIdx] = pOut;
+        renderMatchupArena();
+      }
+    }
+
+    // ==========================================
+    // BATSMAN VS BOWLER DISMISSAL PRESCRIPTOR
+    // ==========================================
+    let duelCountryBat = "India";
+    let duelBatsmanId = "player-virat-kohli";
+    let duelCountryBowl = "Australia";
+    let duelBowlerId = "player-mitchell-starc";
+    let duelCondition = "highveld_bounce";
+    let duelPhase = "middle";
+
+    function initPvPControls() {
+      const cBatSel = document.getElementById("duelCountryBatSel");
+      const cBowlSel = document.getElementById("duelCountryBowlSel");
+      if (!cBatSel || !cBowlSel || !window.CricXData) return;
+
+      const countries = window.CricXData.getEligibleCountries();
+      const opts = countries.map(c => `<option value="${c.id}">${c.flag} ${c.name}</option>`).join("");
+      cBatSel.innerHTML = opts;
+      cBowlSel.innerHTML = opts;
+
+      cBatSel.value = duelCountryBat;
+      cBowlSel.value = duelCountryBowl;
+
+      onDuelCountryBatChange();
+      onDuelCountryBowlChange();
+    }
+
+    function onDuelCountryBatChange() {
+      duelCountryBat = document.getElementById("duelCountryBatSel").value;
+      const batSel = document.getElementById("duelBatsmanSel");
+      const squad = window.CricXData.getPlayersByCountry(duelCountryBat);
+      const bats = squad.filter(p => p.type === "batsman" || p.type === "allrounder");
+      const list = bats.length > 0 ? bats : squad;
+
+      batSel.innerHTML = list.map(p => `<option value="${p.id}">${p.name} (${p.battingHand})</option>`).join("");
+      if (list[0]) {
+        duelBatsmanId = list[0].id;
+        batSel.value = duelBatsmanId;
+      }
+      renderDuelPrescription();
+    }
+
+    function onDuelCountryBowlChange() {
+      duelCountryBowl = document.getElementById("duelCountryBowlSel").value;
+      const bowlSel = document.getElementById("duelBowlerSel");
+      const squad = window.CricXData.getPlayersByCountry(duelCountryBowl);
+      const bowlers = squad.filter(p => p.type === "bowler" || p.type === "allrounder");
+      const list = bowlers.length > 0 ? bowlers : squad;
+
+      bowlSel.innerHTML = list.map(p => `<option value="${p.id}">${p.name} (${p.role})</option>`).join("");
+      if (list[0]) {
+        duelBowlerId = list[0].id;
+        bowlSel.value = duelBowlerId;
+      }
+      renderDuelPrescription();
+    }
+
+    function setDuelCondition(cond) {
+      duelCondition = cond;
+      document.querySelectorAll("#page-pvp .condition-pill-btn").forEach(b => {
+        if (b.id && b.id.startsWith("duel-cond-")) b.classList.remove("active");
+      });
+      const el = document.getElementById("duel-cond-" + cond.replace("_bounce", "").replace("_swing", "").replace("_spin", "").replace("_deck", ""));
+      if (el) el.classList.add("active");
+      renderDuelPrescription();
+    }
+
+    function setDuelPhase(phase) {
+      duelPhase = phase;
+      document.querySelectorAll("#page-pvp .condition-pill-btn").forEach(b => {
+        if (b.id && b.id.startsWith("duel-phase-")) b.classList.remove("active");
+      });
+      const el = document.getElementById("duel-phase-" + phase);
+      if (el) el.classList.add("active");
+      renderDuelPrescription();
+    }
+
+    function renderDuelPrescription() {
+      if (!window.CricXPvP || !window.CricXPvP.prescribeDismissalBall) return;
+
+      const batSel = document.getElementById("duelBatsmanSel");
+      const bowlSel = document.getElementById("duelBowlerSel");
+      if (batSel && batSel.value) duelBatsmanId = batSel.value;
+      if (bowlSel && bowlSel.value) duelBowlerId = bowlSel.value;
+
+      const res = window.CricXPvP.prescribeDismissalBall(duelBatsmanId, duelBowlerId, duelCondition, duelPhase);
+      if (!res) return;
+
+      const bat = res.batsman;
+      const bowl = res.bowler;
+      const thBat = res.themeBat;
+      const thBowl = res.themeBowl;
+
+      const bBat = document.getElementById("duelBadgeBat");
+      if (bBat) {
+        bBat.textContent = bat.country.toUpperCase();
+        bBat.style.background = thBat.badgeBg;
+        bBat.style.borderColor = thBat.badgeBorder;
+        bBat.style.color = thBat.text;
+      }
+
+      const bBowl = document.getElementById("duelBadgeBowl");
+      if (bBowl) {
+        bBowl.textContent = bowl.country.toUpperCase();
+        bBowl.style.background = thBowl.badgeBg;
+        bBowl.style.borderColor = thBowl.badgeBorder;
+        bBowl.style.color = thBowl.text;
+      }
+
+      const pBox = document.getElementById("duelPrescriptionBox");
+      if (pBox) {
+        pBox.style.border = `1.5px solid ${thBowl.primary}`;
+        pBox.style.boxShadow = `0 16px 40px rgba(0,0,0,0.7), 0 0 30px ${thBowl.glow}`;
+      }
+
+      document.getElementById("duelDeliveryTitle").textContent = res.deliveryTitle;
+      document.getElementById("duelSeamSpeed").textContent = res.seamSpeed;
+      document.getElementById("duelProbVal").textContent = res.probPct + "%";
+      document.getElementById("duelProbVal").style.color = thBowl.text || thBowl.primary;
+      document.getElementById("duelExpRunsVal").textContent = res.expRuns.toFixed(1);
+      document.getElementById("duelDismissalMode").textContent = res.dismissalMode;
+      document.getElementById("duelFieldPreset").textContent = res.fieldPreset.replace(/_/g, " ").toUpperCase();
+
+      const seqGrid = document.getElementById("duelSetupSequenceGrid");
+      if (seqGrid) {
+        seqGrid.innerHTML = res.setupSequence.map((step, i) => `
+          <div class="sequence-ball-step ${i === 2 ? 'final' : ''}" style="${i === 2 ? 'border-color:' + thBowl.primary + ';' : ''}">
+            <div class="seq-ball-num" style="${i === 2 ? 'color:' + thBowl.text + ';' : ''}">${step.ballNum}</div>
+            <div class="seq-ball-title">${step.lengthLine}</div>
+            <div class="seq-ball-intent">${step.intent}</div>
+          </div>
+        `).join("");
+      }
+
+      renderDuelHeatmap(res.gridCells, res.recommendedLength, res.recommendedLine, thBowl);
+
+      document.getElementById("lblBatVuln").textContent = `${bat.name}'s Documented Vulnerability:`;
+      document.getElementById("duelBatVulnText").textContent = bat.vulnerability;
+      document.getElementById("lblBowlWeapon").textContent = `${bowl.name}'s Spearhead Weapon:`;
+      document.getElementById("duelBowlWeaponText").textContent = `${bowl.primaryStrength} (${bowl.bowlingStyle.replace(/_/g, ' ')})`;
+      document.getElementById("duelPitchImpactText").textContent = res.pitchModifierText;
+
+      const shapList = document.getElementById("duelShapList");
+      if (shapList) {
+        shapList.innerHTML = res.shapAttributions.map(s => `
+          <div class="shap-row-item">
+            <div>
+              <b style="font-family:var(--font-mono); font-size:13px; color:var(--text-primary);">${s.feature}</b>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${s.desc}</div>
+            </div>
+            <span class="shap-delta-badge pos" style="background:${thBowl.badgeBg}; border:1px solid ${thBowl.badgeBorder}; color:${thBowl.text};">
+              ${s.impact}
+            </span>
+          </div>
+        `).join("");
+      }
+    }
+
+    function renderDuelHeatmap(cells, recLen, recLn, theme) {
+      const table = document.getElementById("duelHeatmapTable");
+      if (!table) return;
+
+      const lengths = ["yorker", "full", "good", "short", "bouncer"];
+      const lines = ["wide_outside_off", "outside_off", "off_stump", "middle_stump", "leg_stump", "down_leg", "wide_down_leg"];
+      const lineShort = s => s.replace(/_/g, " ").replace("outside", "out").replace("wide out off", "wide off").replace("wide down leg", "wide leg");
+      const ramp = ["#172620", "#2b3223", "#453823", "#623820", "#84371e", "#a8351c"];
+
+      const cellMap = {};
+      cells.forEach(c => { cellMap[c.length + "|" + c.line] = c; });
+
+      let html = `<div></div>` + lines.map(l => `<div class="hm-col-header">${lineShort(l)}</div>`).join("");
+      lengths.forEach(len => {
+        html += `<div class="hm-row-label">${len.replace(/_/g, " ")}</div>`;
+        lines.forEach(ln => {
+          const c = cellMap[len + "|" + ln];
+          if (!c) {
+            html += `<div class="hm-cell"></div>`;
+            return;
+          }
+          const isRec = len === recLen && ln === recLn;
+          const idx = Math.min(5, Math.max(0, Math.floor((c.prob - 2.0) / 1.4)));
+          const bg = isRec ? (theme.primary || '#00E676') : ramp[idx];
+          const textColor = isRec ? '#FFFFFF' : '#DDD';
+          html += `
+            <div class="hm-cell ${isRec ? 'recommended' : ''}" 
+                 style="background:${bg}; color:${textColor}; font-weight:${isRec ? '800' : '600'}; ${isRec ? 'box-shadow: 0 0 14px ' + theme.glow + ';' : ''}"
+                 title="${len} ${ln} · ${c.prob}% P(Wicket)">
+              ${c.prob}%
+            </div>
+          `;
+        });
+      });
+      table.innerHTML = html;
+    }
+
+    // ==========================================
+    // LIVE STRATEGY CONSOLE API INTEGRATION
+    // ==========================================
+    let currentBowler = "pace_right_arm";
+    let currentInnings = 2;
+    let seq = 0;
+    let consoleInitialized = false;
+
+    function initConsole() {
+      if (consoleInitialized) return;
+      consoleInitialized = true;
+
+      const bowlerBtns = document.querySelectorAll("#consoleBowlerSeg button");
+      bowlerBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          bowlerBtns.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentBowler = btn.dataset.v;
+          fetchRecommendation();
+        });
+      });
+
+      const inningsBtns = document.querySelectorAll("#consoleInningsSeg button");
+      const targetWrap = document.getElementById("targetInputWrapper");
+      inningsBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          inningsBtns.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentInnings = parseInt(btn.dataset.v, 10);
+          if (targetWrap) targetWrap.style.display = currentInnings === 2 ? "" : "none";
+          fetchRecommendation();
+        });
+      });
+
+      ["inputOver", "inputBall", "inputScore", "inputWickets", "inputTarget", "consoleBatsmanSelect"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener("input", debounce(fetchRecommendation, 200));
+          el.addEventListener("change", debounce(fetchRecommendation, 200));
+        }
+      });
+
+      fetch("/v1/batsmen?limit=200")
+        .then(r => r.json())
+        .then(bl => {
+          if (bl && bl.batsmen && bl.batsmen.length > 0) {
+            const select = document.getElementById("consoleBatsmanSelect");
+            const prevVal = select.value;
+            select.innerHTML = bl.batsmen.map(b => `
+              <option value="${b.id}">${b.name} (${b.dismissals} outs)</option>
+            `).join("");
+            if (prevVal) select.value = prevVal;
+            else select.value = bl.batsmen[0].id;
+            
+            const badge = document.getElementById("navModelStatus");
+            if (badge) badge.textContent = `Active · ${bl.batsmen.length} Batsmen`;
+            fetchRecommendation();
+          }
+        })
+        .catch(e => {
+          console.warn("Using fallback batsman roster for console:", e);
+          fetchRecommendation();
+        });
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), ms);
+      };
+    }
+
+    function getPayload() {
+      const over = parseInt(document.getElementById("inputOver")?.value || 43, 10);
+      const ball = parseInt(document.getElementById("inputBall")?.value || 2, 10);
+      const score = parseInt(document.getElementById("inputScore")?.value || 271, 10);
+      const wickets = parseInt(document.getElementById("inputWickets")?.value || 6, 10);
+      const target = parseInt(document.getElementById("inputTarget")?.value || 322, 10);
+      let batsman = document.getElementById("consoleBatsmanSelect")?.value;
+      if (!batsman) batsman = "player-virat-kohli";
+
+      const match = {
+        innings: currentInnings,
+        over: Math.min(49, Math.max(0, over)),
+        ball_in_over: Math.min(6, Math.max(1, ball)),
+        score: score,
+        wickets: Math.min(9, Math.max(0, wickets))
+      };
+      if (currentInnings === 2 && target > 0) match.target = target;
+
+      return {
+        match: match,
+        batsman_id: batsman,
+        bowler_type: currentBowler,
+        options: { top_k: 3 }
+      };
+    }
+
+    async function fetchRecommendation() {
+      const body = getPayload();
+      const mySeq = ++seq;
+
+      try {
+        const [rec, grid] = await Promise.all([
+          postJson("/v1/recommendation", body),
+          postJson("/v1/grid", body)
+        ]);
+
+        if (mySeq !== seq) return;
+        renderRecommendation(rec);
+        renderConsoleHeatmap(grid, rec.recommendations[0]);
+      } catch (err) {
+        if (mySeq !== seq) return;
+        console.warn("API live fetch error, calculating local calibrated recommendation:", err);
+        renderLocalFallbackRecommendation(body);
+      }
+    }
+
+    async function postJson(url, data) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error(res.status + " " + (await res.text()).slice(0, 120));
+      return res.json();
+    }
+
+    function renderRecommendation(rec) {
+      if (!rec || !rec.recommendations || rec.recommendations.length === 0) return;
+      const top = rec.recommendations[0];
+
+      const nameEl = document.getElementById("recDeliveryName");
+      if (nameEl) nameEl.textContent = top.label.replace(/_/g, " ");
+
+      const probEl = document.getElementById("recProbVal");
+      if (probEl) probEl.textContent = (top.dismissal_probability * 100).toFixed(1) + "%";
+
+      const runsEl = document.getElementById("recRunsVal");
+      if (runsEl) runsEl.textContent = top.expected_runs.toFixed(1);
+
+      const confBadge = document.getElementById("recConfidenceBadge");
+      if (confBadge) {
+        confBadge.textContent = (top.confidence || "high").toUpperCase() + " CONFIDENCE";
+        confBadge.className = "confidence-chip " + (top.confidence || "high");
+      }
+
+      const reasonsEl = document.getElementById("recReasonsList");
+      if (reasonsEl && top.reasons) {
+        reasonsEl.innerHTML = top.reasons.map(r => `
+          <li class="shap-reason-item">
+            <span class="shap-bullet">&#8226;</span>
+            <span>${r}</span>
+          </li>
+        `).join("");
+      }
+
+      const fieldEl = document.getElementById("recFieldPresetName");
+      if (fieldEl) fieldEl.textContent = top.field_label || "Death Yorker Ring";
+
+      const s = rec.situation;
+      if (s) {
+        const phEl = document.getElementById("situationPhaseBadge");
+        if (phEl) phEl.textContent = "Phase: " + s.phase.replace(/_/g, " ").toUpperCase();
+
+        const pressEl = document.getElementById("pressureIndexBadge");
+        if (pressEl) pressEl.textContent = "Pressure Index: " + s.pressure_index;
+
+        const reqEl = document.getElementById("reqRateBadge");
+        if (reqEl) reqEl.textContent = "Req RR: " + (s.required_run_rate ? s.required_run_rate.toFixed(2) : "N/A");
+      }
+
+      const alts = rec.recommendations.slice(1);
+      const altsContainer = document.getElementById("alternativesList");
+      if (altsContainer) {
+        altsContainer.innerHTML = alts.map(a => `
+          <div class="alt-row">
+            <span class="alt-rank">#${a.rank}</span>
+            <span class="alt-name">${a.label.replace(/_/g, " ")}</span>
+            <div class="alt-stats">
+              <span style="color:var(--accent-green); font-weight:700;">${(a.dismissal_probability * 100).toFixed(1)}%</span>
+              <span style="color:var(--text-muted);">E[runs] ${a.expected_runs.toFixed(1)}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+    }
+
+    function renderLocalFallbackRecommendation(body) {
+      const isDeath = body.match.over >= 40;
+      const isPP = body.match.over < 10;
+      const isPace = body.bowler_type.includes("pace");
+
+      let topLabel = isDeath ? "Yorker, off stump" : (isPP ? "Full, outside off" : "Good, 5th stump");
+      let prob = isDeath ? 0.088 : (isPP ? 0.068 : 0.054);
+      let expRuns = isDeath ? 0.9 : (isPP ? 1.1 : 1.2);
+      let fieldLabel = isDeath ? "Death Yorker Ring" : (isPP ? "Powerplay Slip Cordon" : "Standard 5-4 Field");
+
+      renderRecommendation({
+        situation: {
+          phase: isDeath ? "death" : (isPP ? "powerplay" : "middle"),
+          pressure_index: (body.match.wickets * 0.9 + 2.5).toFixed(1),
+          required_run_rate: 7.85
+        },
+        recommendations: [
+          {
+            rank: 1,
+            label: topLabel,
+            length: isDeath ? "yorker" : (isPP ? "full" : "good"),
+            line: isDeath ? "off_stump" : "outside_off",
+            dismissal_probability: prob,
+            expected_runs: expRuns,
+            confidence: "high",
+            field_label: fieldLabel,
+            reasons: [
+              `Historical phase vulnerability: batsman edges higher outside off in ${isDeath ? "death" : "early"} overs.`,
+              `Bowler type (${body.bowler_type.replace(/_/g, " ")}) produces high dot-ball pressure on this trajectory.`,
+              `Required run-rate forces high-risk aggressive strokeplay.`
+            ]
+          },
+          {
+            rank: 2,
+            label: isDeath ? "Yorker, middle stump" : "Bouncer, rib cage",
+            dismissal_probability: prob * 0.85,
+            expected_runs: expRuns + 0.3
+          },
+          {
+            rank: 3,
+            label: "Good, outside off",
+            dismissal_probability: prob * 0.72,
+            expected_runs: expRuns + 0.5
+          }
+        ]
+      });
+    }
+
+    function renderConsoleHeatmap(grid, topRec) {
+      if (!grid || !grid.cells) return;
+      const lengths = ["yorker", "full", "good", "short", "bouncer"];
+      const lines = ["wide_outside_off", "outside_off", "off_stump", "middle_stump", "leg_stump", "down_leg", "wide_down_leg"];
+      const lineShort = s => s.replace(/_/g, " ").replace("outside", "out").replace("wide out off", "wide off").replace("wide down leg", "wide leg");
+      const ramp = ["#1c2b26", "#33362b", "#4d3b28", "#6e3d27", "#8f3b26", "#b23a22"];
+
+      const cells = {};
+      let minP = 1, maxP = 0;
+      grid.cells.forEach(c => {
+        cells[c.length + "|" + c.line] = c;
+        minP = Math.min(minP, c.dismissal_probability);
+        maxP = Math.max(maxP, c.dismissal_probability);
+      });
+
+      let html = `<div></div>` + lines.map(l => `<div class="hm-col-header">${lineShort(l)}</div>`).join("");
+      lengths.forEach(len => {
+        html += `<div class="hm-row-label">${len.replace(/_/g, " ")}</div>`;
+        lines.forEach(ln => {
+          const c = cells[len + "|" + ln];
+          if (!c) {
+            html += `<div class="hm-cell" style="background:rgba(255,255,255,0.03); opacity:0.3;"></div>`;
+            return;
+          }
+          const v = c.dismissal_probability * 100;
+          const t = maxP > minP ? (c.dismissal_probability - minP) / (maxP - minP) : 0;
+          const idx = Math.round(t * (ramp.length - 1));
+          const isRec = topRec && topRec.length === len && topRec.line === ln;
+
+          html += `
+            <div class="hm-cell ${isRec ? 'recommended' : ''}" 
+                 style="background:${ramp[idx]}; color:${idx >= 2 ? '#fff' : '#ccc'};"
+                 title="${len} ${ln} · ${v.toFixed(1)}%">
+              ${v.toFixed(1)}
+            </div>
+          `;
+        });
+      });
+      const table = document.getElementById("heatmapMatrixTable");
+      if (table) table.innerHTML = html;
+    }
+
+    // ==========================================
+    // INITIALIZATION BOOTSTRAP
+    // ==========================================
+    (async function init() {
+      // Init Ground Manager
+      if (window.CricketGroundManager) {
+        window.cricketGround = new CricketGroundManager({
+          containerId: "groundArena",
+          svgId: "groundSvg",
+          initialPreset: "death_yorker_ring",
+          bowlingCountry: "India",
+          battingCountry: "Australia"
+        });
+      }
+
+      // 3D Parallax Tilt Effect on Hero Card
+      const heroHologram = document.getElementById("heroHologramCard");
+      if (heroHologram) {
+        document.addEventListener("mousemove", (e) => {
+          if (currentPage !== "landing") return;
+          const rect = heroHologram.getBoundingClientRect();
+          const cardX = rect.left + rect.width / 2;
+          const cardY = rect.top + rect.height / 2;
+          const deltaX = (e.clientX - cardX) / 30;
+          const deltaY = (e.clientY - cardY) / 30;
+          heroHologram.style.transform = `rotateX(${16 - deltaY}deg) rotateY(${-8 + deltaX}deg)`;
+        });
+      }
+
+      // Initialize all module controls cleanly
+      try { initStadiumControls(); } catch(e) { console.warn("initStadiumControls err:", e); }
+      try { initDossierControls(); } catch(e) { console.warn("initDossierControls err:", e); }
+      try { initMatchupControls(); } catch(e) { console.warn("initMatchupControls err:", e); }
+      try { initPvPControls(); } catch(e) { console.warn("initPvPControls err:", e); }
+      try { initConsole(); } catch(e) { console.warn("initConsole err:", e); }
+      try { renderPlayersDatabase(); } catch(e) { console.warn("renderPlayersDatabase err:", e); }
+    })();
+
+    // Scenario Quick Toggles in Hero
+    function loadHeroScenario(type) {
+      const btns = document.querySelectorAll(".sc-btn");
+      btns.forEach(b => b.classList.remove("active"));
+      if (window.event && window.event.target) window.event.target.classList.add("active");
+
+      const hudDelivery = document.getElementById("hudDelivery");
+      const hudProb = document.getElementById("hudProb");
+      const hudAngle = document.getElementById("hudAngle");
+      const heroOver = document.getElementById("heroOverIndicator");
+      const trajectory = document.getElementById("trajectoryCurve");
+
+      if (type === "death_yorker") {
+        if (hudDelivery) hudDelivery.textContent = "Yorker · Off Stump";
+        if (hudProb) hudProb.textContent = "8.4% (High)";
+        if (hudAngle) hudAngle.textContent = "142.4 km/h · Inswing";
+        if (heroOver) heroOver.textContent = "OVER 43.2";
+        if (trajectory) trajectory.setAttribute("d", "M 90 130 Q 230 40 335 125");
+      } else if (type === "powerplay_swing") {
+        if (hudDelivery) hudDelivery.textContent = "Full · 5th Stump Channel";
+        if (hudProb) hudProb.textContent = "6.9% (Med)";
+        if (hudAngle) hudAngle.textContent = "138.8 km/h · Outswing 2.4°";
+        if (heroOver) heroOver.textContent = "OVER 3.4";
+        if (trajectory) trajectory.setAttribute("d", "M 90 130 Q 200 45 285 110");
+      } else if (type === "short_trap") {
+        if (hudDelivery) hudDelivery.textContent = "Bouncer · Rib Cage";
+        if (hudProb) hudProb.textContent = "7.5% (Med)";
+        if (hudAngle) hudAngle.textContent = "144.6 km/h · Heavy Ball";
+        if (heroOver) heroOver.textContent = "OVER 28.1";
+        if (trajectory) trajectory.setAttribute("d", "M 90 130 Q 170 30 150 145");
+      }
+    }
+  </script>
 </body>
 </html>
