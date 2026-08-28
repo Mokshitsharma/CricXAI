@@ -1,0 +1,11 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 1140, "title": "Strategy Console" },
+    { "file": "Profile.dc.html", "x": 1580, "y": 0, "w": 1200, "h": 920, "title": "Batsman Profile" },
+    { "file": "Timeline.dc.html", "x": 1580, "y": 1040, "w": 1000, "h": 1140, "title": "Match Timeline" }
+  ],
+  "annotations": [
+    { "id": "note-console", "x": 0, "y": -128, "w": 620, "text": "Strategy Console — one confident answer foregrounded: the recommended delivery, its dismissal probability, the field, and three plain-language reasons. Heatmap and alternatives are secondary. Toggle the dark tweak above each artboard." }
+  ],
+  "launch": { "view": "focused", "file": "Main.dc.html" }
+}

@@ -1,0 +1,50 @@
+# Render.com blueprint. `render blueprint launch` or connect the repo.
+# One-command-ish deploy of the API + web + managed Postgres + Redis.
+services:
+  - type: web
+    name: cricxai-api
+    runtime: docker
+    dockerfilePath: deploy/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    plan: starter
+    envVars:
+      - key: CRICXAI_MODEL_DIR
+        value: /data/models
+      - key: CRICXAI_PROCESSED_DIR
+        value: /data/processed
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cricxai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: cricxai-redis
+          property: connectionString
+    disk:
+      name: cricxai-data
+      mountPath: /data
+      sizeGB: 1
+
+  - type: web
+    name: cricxai-web
+    runtime: docker
+    dockerfilePath: deploy/Dockerfile.web
+    dockerContext: .
+    plan: starter
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE_URL
+        fromService:
+          type: web
+          name: cricxai-api
+          property: host
+
+  - type: redis
+    name: cricxai-redis
+    plan: starter
+    ipAllowList: []
+
+databases:
+  - name: cricxai-db
+    plan: basic-256mb

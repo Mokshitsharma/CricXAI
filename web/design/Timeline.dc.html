@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; }
+    .cx {
+      --bg:#FBFBFA; --surface:#FFFFFF; --border:#E8E6E1; --text:#1A1A1A;
+      --muted:#6B6B6B; --accent:#1F6F5C; --wkt:#C06A4A; --track:#F0EEE8;
+      font-family:"Inter","IBM Plex Sans",system-ui,sans-serif;
+      background:var(--bg); color:var(--text); font-feature-settings:"tnum" 1;
+      -webkit-font-smoothing:antialiased;
+      width:1000px; min-height:1120px; padding:28px 32px 40px;
+    }
+    .cx[data-theme="dark"] {
+      --bg:#0E0F11; --surface:#17191C; --border:#2A2D31; --text:#ECECEC;
+      --muted:#9A9A9A; --accent:#3FA98C; --wkt:#E0805A; --track:#22252A;
+    }
+    .cx a { color:var(--accent); text-decoration:none; }
+    .cx a:hover { text-decoration:underline; }
+    .cx h1,.cx h2,.cx h3,.cx p { margin:0; }
+    .label { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; }
+    .row { display:flex; align-items:center; gap:10px; }
+    .tabs { display:flex; gap:4px; }
+    .tab { font-size:12px; padding:7px 14px; border-radius:7px; color:var(--muted); border:1px solid transparent; }
+    .tab.on { background:var(--surface); border-color:var(--border); color:var(--text); font-weight:600; }
+    .ball { display:grid; grid-template-columns: 52px 1fr 64px 84px; align-items:center; gap:14px; padding:11px 16px; border-bottom:1px solid var(--border); }
+    .ball:last-child { border-bottom:0; }
+    .ov { font-size:12px; color:var(--muted); font-weight:600; }
+    .desc { font-size:13px; }
+    .desc b { font-weight:600; }
+    .out { font-size:12px; font-weight:600; }
+    .dot { color:var(--muted); }
+    .four { color:var(--accent); }
+    .wicket { color:var(--wkt); }
+    .analyse { font-size:11px; color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius:6px; padding:4px 8px; text-align:center; }
+    .ball.isw { background:color-mix(in srgb, var(--wkt) 8%, transparent); }
+  </style>
+</helmet>
+
+<div class="cx" data-theme="{{themeAttr}}">
+
+  <div class="row" style="justify-content:space-between; margin-bottom:20px;">
+    <div class="row" style="gap:12px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M5 7l14 10M19 7L5 17"/></svg>
+      <h1 style="font-size:16px; font-weight:600;">CricXAI</h1>
+      <span style="color:var(--muted); font-size:13px;">Match timeline</span>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:16px;">
+    <h2 style="font-size:19px; font-weight:600; letter-spacing:-.01em;">India v Australia</h2>
+    <span style="font-size:13px; color:var(--muted);">Wankhede Stadium, Mumbai &middot; 12 Feb 2026 &middot; India won by 4 wickets</span>
+  </div>
+
+  <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+    <div class="tabs" style="background:var(--track); padding:4px; border-radius:9px;">
+      <span class="tab">1st innings &middot; AUS 321/8</span>
+      <span class="tab on">2nd innings &middot; IND 322/6</span>
+    </div>
+    <span style="font-size:12px; color:var(--muted);">click a ball to analyse the situation before it</span>
+  </div>
+
+  <div class="card">
+    <sc-for list="{{balls}}" as="b" hint-placeholder-count="12">
+      <div class="ball {{b.cls}}">
+        <span class="ov">{{b.ov}}</span>
+        <span class="desc"><b>{{b.bat}}</b> &mdash; {{b.text}} <span style="color:var(--muted);">v {{b.bowl}}</span></span>
+        <span class="out {{b.outcls}}">{{b.out}}</span>
+        <span class="analyse">&#9655; Analyse</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <p style="font-size:12px; color:var(--muted); margin-top:14px;">Showing the death overs. Scroll for the full innings.</p>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"accent":{"editor":"color","default":"#1F6F5C","options":["#1F6F5C","#3FA98C"],"section":"Theme"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark ?? false;
+    const raw = [
+      ['42.1', 'Pandya', 'Cummins', 'good length outside off, pushed to cover', '1', 'dot'],
+      ['42.2', 'Rahul', 'Cummins', 'short of a length, pulled hard', 'FOUR', 'four'],
+      ['42.3', 'Rahul', 'Cummins', 'wide yorker, dug out', '1', 'dot'],
+      ['42.4', 'Pandya', 'Cummins', 'full and straight, driven', '2', 'dot'],
+      ['42.5', 'Pandya', 'Cummins', 'slower bouncer, top-edged &mdash; caught at fine leg', 'W', 'wicket'],
+      ['42.6', 'Jadeja', 'Cummins', 'yorker on off stump, jammed out', '0', 'dot'],
+      ['43.1', 'Rahul', 'Starc', 'length ball on middle, worked to leg', '1', 'dot'],
+      ['43.2', 'Jadeja', 'Starc', 'yorker, off stump &mdash; recommended cell', '2', 'dot'],
+      ['43.3', 'Jadeja', 'Starc', 'full outside off, carved over point', 'FOUR', 'four'],
+      ['43.4', 'Jadeja', 'Starc', 'wide yorker, missed', '1', 'dot'],
+      ['43.5', 'Rahul', 'Starc', 'low full toss, flicked square', '2', 'dot'],
+      ['43.6', 'Rahul', 'Starc', 'back of a length, punched to long-on', '1', 'dot'],
+    ];
+    const outcls = { dot: 'dot', four: 'four', wicket: 'wicket' };
+    const balls = raw.map(([ov, bat, bowl, text, out, kind]) => ({
+      ov, bat, bowl, text, out,
+      outcls: outcls[kind] || 'dot',
+      cls: kind === 'wicket' ? 'isw' : '',
+    }));
+    return { themeAttr: dark ? 'dark' : 'light', accent: this.props.accent ?? '#1F6F5C', balls };
+  }
+}
+</script>
+</body>
+</html>

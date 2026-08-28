@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; }
+    .cx {
+      --bg:#FBFBFA; --surface:#FFFFFF; --border:#E8E6E1; --text:#1A1A1A;
+      --muted:#6B6B6B; --accent:#1F6F5C; --good:#2E7D32; --warn:#B26A00;
+      --field:#EEF3F0; --shadow: 0 1px 2px rgba(20,20,20,.04), 0 8px 24px rgba(20,20,20,.06);
+      font-family:"Inter","IBM Plex Sans",system-ui,sans-serif;
+      background:var(--bg); color:var(--text);
+      font-feature-settings:"tnum" 1, "cv05" 1;
+      -webkit-font-smoothing:antialiased;
+      width:1440px; min-height:1120px; padding:28px 32px 40px;
+    }
+    .cx[data-theme="dark"] {
+      --bg:#0E0F11; --surface:#17191C; --border:#2A2D31; --text:#ECECEC;
+      --muted:#9A9A9A; --accent:#3FA98C; --good:#66BB6A; --warn:#E0A030;
+      --field:#14201C; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.45);
+    }
+    .cx a { color: var(--accent); text-decoration: none; }
+    .cx a:hover { text-decoration: underline; }
+    .cx h1,.cx h2,.cx h3,.cx p { margin:0; }
+    .label { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; }
+    .row { display:flex; align-items:center; gap:10px; }
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .control {
+      height:38px; border:1px solid var(--border); border-radius:8px; background:var(--surface);
+      color:var(--text); font:inherit; font-size:14px; padding:0 12px; display:flex; align-items:center;
+      justify-content:space-between;
+    }
+    .seg { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+    .seg > span { flex:1; text-align:center; font-size:12px; padding:9px 6px; color:var(--muted); border-right:1px solid var(--border); }
+    .seg > span:last-child { border-right:0; }
+    .seg > span.on { background:var(--accent); color:#fff; font-weight:600; }
+    .stepper { display:flex; align-items:center; justify-content:space-between; }
+    .stepper b { font-size:15px; font-weight:600; }
+    .step-btn { width:26px; height:26px; border:1px solid var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--muted); }
+    .pill { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; border:1px solid var(--border); color:var(--muted); text-transform:capitalize; }
+    .pill.medium { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 40%, var(--border)); }
+    .grid7 { display:grid; grid-template-columns: 84px repeat(7, minmax(0,1fr)); gap:3px; }
+    .hcell { aspect-ratio: 1 / .62; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; border-radius:3px; }
+    .hhead { font-size:10px; color:var(--muted); display:flex; align-items:center; justify-content:center; text-align:center; letter-spacing:.02em; }
+    .hrow-label { font-size:11px; color:var(--muted); display:flex; align-items:center; }
+  </style>
+</helmet>
+
+<div class="cx" data-theme="{{themeAttr}}">
+
+  <!-- header -->
+  <div class="row" style="justify-content:space-between; margin-bottom:22px;">
+    <div class="row" style="gap:12px;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M5 7l14 10M19 7L5 17"/></svg>
+      <h1 style="font-size:17px; font-weight:600; letter-spacing:-.01em;">CricXAI</h1>
+      <span style="color:var(--muted); font-size:13px;">Strategy Console</span>
+    </div>
+    <div class="row" style="gap:14px;">
+      <span style="font-size:12px; color:var(--muted);">model 2026&#8209;08&#8209;28</span>
+      <div style="width:28px; height:28px; border-radius:999px; background:var(--field); border:1px solid var(--border);"></div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 360px minmax(0,1fr); gap:22px; align-items:start;">
+
+    <!-- situation builder -->
+    <div class="card" style="padding:22px; display:flex; flex-direction:column; gap:16px;">
+      <div class="label">Situation</div>
+
+      <div class="field"><span class="label" style="text-transform:none; letter-spacing:0; font-weight:500; color:var(--text); font-size:12px;">Match</span>
+        <div class="control">India v Australia &middot; Wankhede <span style="color:var(--muted);">&#9662;</span></div>
+      </div>
+
+      <div class="field"><span style="font-size:12px; font-weight:500;">Batsman</span>
+        <div class="control">Virat Kohli <span style="color:var(--muted); font-size:12px;">23 outs</span></div>
+      </div>
+
+      <div class="field"><span style="font-size:12px; font-weight:500;">Bowler type</span>
+        <div class="seg">
+          <span class="on">Pace R</span><span>Pace L</span><span>Off&#8209;spin</span><span>Leg&#8209;spin</span><span>SLA</span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="field"><span style="font-size:12px; font-weight:500;">Over</span>
+          <div class="control stepper"><span class="step-btn">&minus;</span><b>43</b><span class="step-btn">+</span></div>
+        </div>
+        <div class="field"><span style="font-size:12px; font-weight:500;">Ball</span>
+          <div class="control stepper"><span class="step-btn">&minus;</span><b>2</b><span class="step-btn">+</span></div>
+        </div>
+        <div class="field"><span style="font-size:12px; font-weight:500;">Score</span>
+          <div class="control stepper"><span class="step-btn">&minus;</span><b>271</b><span class="step-btn">+</span></div>
+        </div>
+        <div class="field"><span style="font-size:12px; font-weight:500;">Wickets</span>
+          <div class="control stepper"><span class="step-btn">&minus;</span><b>6</b><span class="step-btn">+</span></div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:end;">
+        <div class="field"><span style="font-size:12px; font-weight:500;">Innings</span>
+          <div class="seg"><span>1st</span><span class="on">Chasing</span></div>
+        </div>
+        <div class="field"><span style="font-size:12px; font-weight:500;">Target</span>
+          <div class="control stepper"><span class="step-btn">&minus;</span><b>322</b><span class="step-btn">+</span></div>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:space-between; padding-top:6px; border-top:1px solid var(--border);">
+        <span class="pill">Phase &middot; Death</span>
+        <span class="pill">Pressure &middot; 7.4</span>
+      </div>
+    </div>
+
+    <!-- results -->
+    <div style="display:flex; flex-direction:column; gap:22px;">
+
+      <!-- primary recommendation -->
+      <div class="card" style="padding:26px; box-shadow:var(--shadow); display:grid; grid-template-columns: minmax(0,1fr) 300px; gap:28px;">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="label">Recommended delivery</div>
+          <h2 style="font-size:30px; font-weight:600; letter-spacing:-.02em;">Yorker, off stump</h2>
+          <div class="row" style="gap:26px; align-items:flex-end;">
+            <div>
+              <div style="font-size:44px; font-weight:600; line-height:1; letter-spacing:-.02em; color:var(--accent);">8.1%</div>
+              <div class="label" style="margin-top:6px;">Dismissal probability</div>
+            </div>
+            <div>
+              <div style="font-size:20px; font-weight:600;">1.1</div>
+              <div class="label" style="margin-top:6px;">Exp. runs</div>
+            </div>
+            <span class="pill medium">Medium confidence</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:9px; padding-top:6px;">
+            <div class="row" style="align-items:flex-start; gap:8px;"><span style="color:var(--accent);">&bull;</span><p style="font-size:13.5px; line-height:1.5;">34% of his dismissals are bowled &mdash; 13 points above the dataset average.</p></div>
+            <div class="row" style="align-items:flex-start; gap:8px;"><span style="color:var(--accent);">&bull;</span><p style="font-size:13.5px; line-height:1.5;">He averages 12 at the death versus 41 in the middle overs.</p></div>
+            <div class="row" style="align-items:flex-start; gap:8px;"><span style="color:var(--accent);">&bull;</span><p style="font-size:13.5px; line-height:1.5;">Under chase pressure (index 7.4) his dot&#37; climbs and strike rate drops.</p></div>
+          </div>
+        </div>
+
+        <div style="border-left:1px solid var(--border); padding-left:24px; display:flex; flex-direction:column; gap:10px;">
+          <div class="label">Field &middot; death yorker ring</div>
+          <svg viewBox="0 0 200 200" width="100%" style="background:var(--field); border:1px solid var(--border); border-radius:8px;">
+            <ellipse cx="100" cy="105" rx="88" ry="90" fill="none" stroke="var(--border)"/>
+            <circle cx="100" cy="105" r="42" fill="none" stroke="var(--border)"/>
+            <rect x="96" y="150" width="8" height="20" fill="none" stroke="var(--muted)"/>
+            <g fill="var(--accent)">
+              <circle cx="150" cy="60" r="4"/><circle cx="168" cy="104" r="4"/><circle cx="150" cy="150" r="4"/>
+              <circle cx="112" cy="176" r="4"/><circle cx="88" cy="176" r="4"/><circle cx="34" cy="150" r="4"/>
+              <circle cx="26" cy="104" r="4"/><circle cx="118" cy="66" r="4"/><circle cx="82" cy="66" r="4"/>
+            </g>
+            <circle cx="100" cy="150" r="3.4" fill="var(--text)"/>
+          </svg>
+          <p style="font-size:11.5px; color:var(--muted); line-height:1.5;">Two out, ring straight, boundary riders square and long.</p>
+        </div>
+      </div>
+
+      <!-- alternatives -->
+      <div class="card" style="padding:18px 22px;">
+        <div class="label" style="margin-bottom:12px;">Alternatives</div>
+        <div style="display:flex; flex-direction:column;">
+          <div class="row" style="justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
+            <div class="row" style="gap:12px;"><span style="color:var(--muted); font-size:12px; width:16px;">2</span><span style="font-size:14px; font-weight:500;">Full, wide outside off</span></div>
+            <div class="row" style="gap:26px;"><span style="font-size:13px;">6.0%</span><span style="font-size:13px; color:var(--muted);">E 1.4</span></div>
+          </div>
+          <div class="row" style="justify-content:space-between; padding:10px 0;">
+            <div class="row" style="gap:12px;"><span style="color:var(--muted); font-size:12px; width:16px;">3</span><span style="font-size:14px; font-weight:500;">Short, off stump</span></div>
+            <div class="row" style="gap:26px;"><span style="font-size:13px;">5.2%</span><span style="font-size:13px; color:var(--muted);">E 1.7</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- heatmap -->
+      <div class="card" style="padding:20px 22px;">
+        <div class="row" style="justify-content:space-between; margin-bottom:14px;">
+          <div class="label">Length &times; line &mdash; dismissal danger</div>
+          <span style="font-size:11px; color:var(--muted);">recommended cell ringed &middot; value = P(wicket) &times;100</span>
+        </div>
+        <div class="grid7">
+          <div></div>
+          <sc-for list="{{lines}}" as="ln" hint-placeholder-count="7"><div class="hhead">{{ln}}</div></sc-for>
+          <sc-for list="{{cells}}" as="c" hint-placeholder-count="40">
+            <sc-if value="{{c.isLabel}}" hint-placeholder-val="{{true}}"><div class="hrow-label">{{c.text}}</div></sc-if>
+            <sc-if value="{{c.isCell}}" hint-placeholder-val="{{true}}">
+              <div class="hcell" style="background:{{c.bg}}; color:{{c.fg}}; box-shadow:{{c.ring}};">{{c.v}}</div>
+            </sc-if>
+          </sc-for>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"accent":{"editor":"color","default":"#1F6F5C","options":["#1F6F5C","#3FA98C","#1A5FB4","#7A3E9D"],"section":"Theme"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark ?? false;
+    const accent = this.props.accent ?? '#1F6F5C';
+    const lines = ['wide off','out off','off','middle','leg','down leg','wide leg'];
+    const lengths = ['Yorker','Full','Good','Short','Bouncer'];
+    // danger values (P wicket x100), row-major [length][line]
+    const grid = [
+      [3.1, 5.4, 8.1, 6.9, 5.2, 2.1, 1.4],
+      [4.0, 6.2, 6.0, 5.1, 3.6, 2.3, 1.2],
+      [2.6, 4.8, 4.4, 3.1, 2.4, 1.9, 1.0],
+      [2.2, 3.9, 5.2, 4.6, 3.4, 2.8, 1.6],
+      [3.0, 4.1, 5.0, 4.4, 3.9, 3.1, 2.0],
+    ];
+    const ramp = dark
+      ? ['#1c2b26','#33362b','#4d3b28','#6e3d27','#8f3b26','#b23a22']
+      : ['#f2efe6','#efe2c9','#e7c9a8','#dcae87','#cf8f6f','#c06a4a'];
+    const rampFg = (i) => (dark ? (i >= 2 ? '#f4ede6' : '#c9c4bb') : (i >= 4 ? '#fff' : '#4a3f33'));
+    const max = 8.1, min = 1.0;
+    const cells = [];
+    for (let r = 0; r < lengths.length; r++) {
+      cells.push({ isLabel: true, isCell: false, text: lengths[r] });
+      for (let c = 0; c < lines.length; c++) {
+        const v = grid[r][c];
+        const t = Math.max(0, Math.min(1, (v - min) / (max - min)));
+        const idx = Math.round(t * (ramp.length - 1));
+        const isRec = (r === 0 && c === 2);
+        cells.push({
+          isLabel: false, isCell: true,
+          v: v.toFixed(1),
+          bg: ramp[idx], fg: rampFg(idx),
+          ring: isRec ? `inset 0 0 0 2px ${accent}` : 'none',
+        });
+      }
+    }
+    return { themeAttr: dark ? 'dark' : 'light', accent, lines, cells };
+  }
+}
+</script>
+</body>
+</html>

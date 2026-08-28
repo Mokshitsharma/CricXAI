@@ -1,0 +1,34 @@
+name: Scheduled scrape (Phase 2)
+
+# DISABLED until real ESPNcricinfo series IDs are filled into
+# scripts/match_ids.py TOURNAMENTS. Enable by adding the `schedule` trigger
+# back and confirming the runner IPs are not 403'd (see README.md).
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 3 * * *"   # daily 03:00 UTC
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Scrape a small batch
+        run: python -m scripts.scraper --batch-size "${CRICXAI_SCRAPE_BATCH_SIZE:-10}"
+      - name: Parse + rebuild features
+        run: |
+          python -m scripts.nlp_parser
+          python -m scripts.build_features
+      - name: Commit new raw data + logs
+        run: |
+          git config user.name "cricxai-bot"
+          git config user.email "bot@cricxai.local"
+          git add data/raw data/logs
+          git commit -m "chore: scheduled scrape $(date -u +%F)" || echo "nothing to commit"
+          git push || echo "push skipped"

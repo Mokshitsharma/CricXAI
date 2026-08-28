@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
 import requests
 
 from scripts import match_ids

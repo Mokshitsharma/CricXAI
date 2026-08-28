@@ -35,7 +35,6 @@ from app.utils.cricket_constants import (
 from app.utils.file_io import ensure_dir
 from app.utils.logger import get_logger
 
-
 DEFAULT_INPUT_PATH = Path("data/processed/deliveries.csv")
 DEFAULT_OUTPUT_PATH = Path("data/processed/delivery_features.csv")
 BALLS_PER_OVER = 6

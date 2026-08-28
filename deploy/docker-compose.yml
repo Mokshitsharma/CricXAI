@@ -1,0 +1,52 @@
+# Local full-stack: API + web + Postgres + Redis.
+# Postgres/Redis are here for Phase 3 wiring; the API runs fine without them
+# (it uses the CSV data layer until then).
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      CRICXAI_MODEL_DIR: /data/models
+      CRICXAI_PROCESSED_DIR: /data/processed
+      DATABASE_URL: postgresql+psycopg://cricxai:cricxai@postgres:5432/cricxai
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ../data:/data:ro
+    depends_on:
+      - postgres
+      - redis
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    depends_on:
+      - api
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: cricxai
+      POSTGRES_PASSWORD: cricxai
+      POSTGRES_DB: cricxai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:

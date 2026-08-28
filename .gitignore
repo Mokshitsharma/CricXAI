@@ -27,3 +27,14 @@ data/models/**/*
 # Keep data directories in git
 !data/processed/.gitkeep
 !data/models/.gitkeep
+
+# Regenerable design-canvas payload (~2.5 MB). The .dc.html sources +
+# canvas.json are the real source; reseed with the design skill's
+# seed-canvas.mjs (see web/README.md).
+web/design/*-strategy-console.html
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

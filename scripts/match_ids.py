@@ -20,7 +20,6 @@ import requests
 from app.utils.file_io import ensure_dir, read_json, write_json
 from app.utils.logger import get_logger
 
-
 SERIES_SCHEDULE_URL = "https://hs-consumer-api.espncricinfo.com/v1/pages/series/schedule"
 DEFAULT_TIMEOUT_SECONDS = 20
 

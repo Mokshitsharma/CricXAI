@@ -1,7 +1,24 @@
+# --- data pipeline ---
 requests
 pandas
 numpy
 python-dotenv
 tqdm
 pyyaml
+pyarrow
+
+# --- models ---
+scikit-learn>=1.6
+lightgbm
+shap
+joblib
+
+# --- api ---
+fastapi
+uvicorn[standard]
+pydantic>=2
+
+# --- dev / test ---
 pytest
+httpx
+ruff

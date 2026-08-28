@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; }
+    .cx {
+      --bg:#FBFBFA; --surface:#FFFFFF; --border:#E8E6E1; --text:#1A1A1A;
+      --muted:#6B6B6B; --accent:#1F6F5C; --warn:#B26A00; --track:#F0EEE8;
+      font-family:"Inter","IBM Plex Sans",system-ui,sans-serif;
+      background:var(--bg); color:var(--text); font-feature-settings:"tnum" 1;
+      -webkit-font-smoothing:antialiased;
+      width:1200px; min-height:900px; padding:28px 32px 40px;
+    }
+    .cx[data-theme="dark"] {
+      --bg:#0E0F11; --surface:#17191C; --border:#2A2D31; --text:#ECECEC;
+      --muted:#9A9A9A; --accent:#3FA98C; --warn:#E0A030; --track:#22252A;
+    }
+    .cx a { color:var(--accent); text-decoration:none; }
+    .cx a:hover { text-decoration:underline; }
+    .cx h1,.cx h2,.cx h3,.cx p { margin:0; }
+    .label { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 22px; }
+    .row { display:flex; align-items:center; gap:10px; }
+    .barrow { display:grid; grid-template-columns: 96px 1fr 44px; align-items:center; gap:12px; padding:6px 0; }
+    .bartrack { height:8px; background:var(--track); border-radius:999px; overflow:hidden; }
+    .barfill { height:100%; background:var(--accent); border-radius:999px; }
+    .barlabel { font-size:12px; color:var(--muted); text-transform:capitalize; }
+    .barval { font-size:12px; font-weight:600; text-align:right; }
+    .pill { display:inline-flex; align-items:center; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
+  </style>
+</helmet>
+
+<div class="cx" data-theme="{{themeAttr}}">
+
+  <div class="row" style="justify-content:space-between; margin-bottom:22px;">
+    <div class="row" style="gap:12px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M5 7l14 10M19 7L5 17"/></svg>
+      <h1 style="font-size:16px; font-weight:600;">CricXAI</h1>
+      <span style="color:var(--muted); font-size:13px;">Batsman profile</span>
+    </div>
+    <a href="#" style="font-size:13px;">Open in console &rarr;</a>
+  </div>
+
+  <!-- identity -->
+  <div class="row" style="gap:18px; margin-bottom:22px;">
+    <div style="width:56px; height:56px; border-radius:999px; background:var(--track); border:1px solid var(--border);"></div>
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <h2 style="font-size:22px; font-weight:600; letter-spacing:-.01em;">Virat Kohli</h2>
+      <div class="row" style="gap:8px;">
+        <span class="pill">India</span><span class="pill">Right hand</span>
+        <span style="font-size:12px; color:var(--muted);">898 balls &middot; 23 dismissals &middot; 41 matches</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:20px;">
+
+    <div class="card">
+      <div class="label" style="margin-bottom:12px;">Dismissal type</div>
+      <sc-for list="{{dismissal}}" as="d" hint-placeholder-count="5">
+        <div class="barrow">
+          <span class="barlabel">{{d.k}}</span>
+          <div class="bartrack"><div class="barfill" style="width:{{d.w}};"></div></div>
+          <span class="barval">{{d.v}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div class="card">
+      <div class="label" style="margin-bottom:12px;">By ball length</div>
+      <sc-for list="{{length}}" as="d" hint-placeholder-count="5">
+        <div class="barrow">
+          <span class="barlabel">{{d.k}}</span>
+          <div class="bartrack"><div class="barfill" style="width:{{d.w}};"></div></div>
+          <span class="barval">{{d.v}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div class="card">
+      <div class="label" style="margin-bottom:12px;">By ball line</div>
+      <sc-for list="{{line}}" as="d" hint-placeholder-count="6">
+        <div class="barrow">
+          <span class="barlabel">{{d.k}}</span>
+          <div class="bartrack"><div class="barfill" style="width:{{d.w}};"></div></div>
+          <span class="barval">{{d.v}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div class="card">
+      <div class="label" style="margin-bottom:16px;">Average by phase</div>
+      <div style="display:flex; align-items:flex-end; gap:14px; height:150px;">
+        <sc-for list="{{phase}}" as="p" hint-placeholder-count="5">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+            <span style="font-size:12px; font-weight:600;">{{p.v}}</span>
+            <div style="width:100%; background:var(--accent); border-radius:4px 4px 0 0; height:{{p.h}};"></div>
+            <span style="font-size:10px; color:var(--muted); text-align:center;">{{p.k}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div class="row" style="gap:24px; margin-top:18px; padding-top:14px; border-top:1px solid var(--border);">
+        <div><div style="font-size:18px; font-weight:600; color:var(--warn);">18.4</div><div class="label" style="margin-top:4px;">Under pressure</div></div>
+        <div><div style="font-size:18px; font-weight:600;">47.2</div><div class="label" style="margin-top:4px;">Normal</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"accent":{"editor":"color","default":"#1F6F5C","options":["#1F6F5C","#3FA98C"],"section":"Theme"}}'>
+class Component extends DCLogic {
+  _bars(pairs) {
+    const max = Math.max(...pairs.map((p) => p[1]));
+    return pairs.map(([k, v]) => ({ k, v: v + '%', w: (v / max * 100).toFixed(0) + '%' }));
+  }
+  renderVals() {
+    const dark = this.props.dark ?? false;
+    const accent = this.props.accent ?? '#1F6F5C';
+    const phaseRaw = [['PP', 38], ['Early', 52], ['Middle', 61], ['Late', 44], ['Death', 12]];
+    const pmax = Math.max(...phaseRaw.map((p) => p[1]));
+    return {
+      themeAttr: dark ? 'dark' : 'light',
+      accent,
+      dismissal: this._bars([['bowled', 34], ['caught', 39], ['lbw', 13], ['run out', 9], ['stumped', 5]]),
+      length: this._bars([['yorker', 9], ['full', 31], ['good', 39], ['short', 17], ['bouncer', 4]]),
+      line: this._bars([['wide off', 7], ['outside off', 39], ['off', 22], ['middle', 18], ['leg', 9], ['down leg', 5]]),
+      phase: phaseRaw.map(([k, v]) => ({ k, v, h: (v / pmax * 130).toFixed(0) + 'px' })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+[project]
+name = "cricxai"
+version = "0.1.0"
+description = "Prescriptive cricket strategy platform"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["venv", "web", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = [
+    "E501",   # line length is enforced by the formatter, not the linter
+    "B008",   # FastAPI uses callables in argument defaults (Depends/Query)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "SIM"]
+"scripts/mock_data.py" = ["E741"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::UserWarning:shap",
+    "ignore::FutureWarning",
+]

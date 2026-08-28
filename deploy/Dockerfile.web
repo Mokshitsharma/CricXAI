@@ -1,0 +1,22 @@
+# CricXAI web console (Next.js).
+FROM node:20-slim AS deps
+WORKDIR /web
+COPY web/package.json web/package-lock.json* ./
+RUN npm ci || npm install
+
+FROM node:20-slim AS build
+WORKDIR /web
+COPY --from=deps /web/node_modules ./node_modules
+COPY web/ ./
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+FROM node:20-slim AS run
+WORKDIR /web
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+COPY --from=build /web/.next ./.next
+COPY --from=build /web/public ./public
+COPY --from=build /web/node_modules ./node_modules
+COPY --from=build /web/package.json ./package.json
+EXPOSE 3000
+CMD ["npm", "start"]

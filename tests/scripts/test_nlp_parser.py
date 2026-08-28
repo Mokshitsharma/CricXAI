@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from scripts.nlp_parser import (
     extract_dismissal,
