@@ -1,127 +1,270 @@
 # CricXAI
 
-CricXAI is a prescriptive cricket strategy platform. Instead of just
-reporting what a batsman has done historically, it recommends what a
-bowling team should do *right now* against a specific batsman in a specific
-match situation — delivery length and line, field placement, dismissal
-probability and type, with SHAP-based reasoning.
+**Prescriptive cricket strategy for ODIs.** Instead of only reporting what a
+batsman has done, CricXAI scores every delivery a bowling side could bowl
+*right now* — for a given batsman, bowler type and match situation — and
+returns a ranked recommendation with dismissal probability, likely dismissal
+type, expected runs, a field placement, and SHAP-based reasons.
+
+> **Honest status:** the modelling pipeline, the three ML models, the
+> recommendation engine and the API are real and run on **1.36M real
+> ball-by-ball deliveries** from 2,569 men's ODIs. The one thing they can't
+> do yet is the headline "prescribe length **and** line" claim — the only
+> free ball-by-ball source (Cricsheet) has no ball-tracking data, so the
+> length × line grid comes back flat. See [Known limitations](#known-limitations).
+
+---
 
 ## Status
 
-Early-stage build. Implemented: the data pipeline, leakage-free feature
-engineering, the three LightGBM models (M1 dismissal probability, M2
-dismissal type, M3 expected runs) with SHAP explanations, the candidate-grid
-recommendation engine, and the FastAPI `/v1` service with a single-file web
-console. Not built: persistence (Postgres/Redis), auth, and the monetization
-layer.
+| Area | State |
+|---|---|
+| Data ingest (Cricsheet ODI JSON → tables) | ✅ `scripts/cricsheet_ingest.py` |
+| Mock ODI simulator (tests / CI / offline dev) | ✅ `scripts/mock_data.py` |
+| Leakage-safe feature engineering | ✅ `scripts/build_features.py` (+ leakage tests) |
+| Models M1 / M2 / M3 (LightGBM, grouped CV, SHAP) | ✅ trained on real data |
+| Candidate-grid recommendation engine | ✅ `app/engine/` |
+| FastAPI `/v1` service + single-file web console | ✅ `app/api/` |
+| Web console — Live Console / Player-vs-Player / Matchup & XI AI | ✅ wired to `/v1` |
+| Web console — Dossier / Rosters / Stadium | ⚠️ still on hardcoded demo data |
+| Persistence (Postgres / Redis / object store) | ❌ Phase 3 |
+| Auth / API keys / billing | ❌ Phase 5 |
+| ESPNcricinfo scraper (`scripts/scraper.py`) | 🅿️ retained as the future path to real length/line, not in use |
 
-**Data:** two sources feed the same schema.
-- `scripts/mock_data.py` — a deterministic ODI simulator (10 squads, 100
-  matches), used for tests/CI and as a development stand-in.
-- `scripts/cricsheet_ingest.py` — real ball-by-ball ODI data from
-  [Cricsheet](https://cricsheet.org) (ODC-BY), ~2,569 men's ODIs / 1.36M
-  deliveries. **Cricsheet carries no ball length / line / shot type**, so
-  those columns ingest as `"unknown"` and the length×line recommendation is
-  not yet backed by real data — see `docs/PHASES.md` Phase 2 and
-  `data/external/cricsheet/SOURCE.md`.
+Full roadmap and exit gates: [`docs/PHASES.md`](docs/PHASES.md).
 
-## Project structure
+---
 
-```text
-scripts/
-  match_ids.py       # resolve ODI match IDs to scrape (API + manual fallback)
-  scraper.py          # scrape ESPNcricinfo commentary, one JSON file per match
-  nlp_parser.py        # commentary text -> structured ball-by-ball data
-  build_features.py    # ball-by-ball data -> ML-ready feature table
-app/
-  utils/
-    logger.py           # shared logging config
-    file_io.py           # JSON/YAML/dir helpers
-    cricket_constants.py # shared phase/length/line/dismissal vocabulary
-data/
-  raw/       # one JSON file per scraped match (committed to git intentionally)
-  processed/ # deliveries.csv, matches.csv, delivery_features.csv (gitignored)
-  models/    # trained model artifacts, once they exist (gitignored)
-  logs/      # scrape run logs (committed to git intentionally)
-tests/
-  scripts/   # pytest coverage for the four scripts above, offline/synthetic
-```
+## Quick start
 
-## Setup
+Requires **Python 3.13**.
 
 ```bash
+git clone https://github.com/Mokshitsharma/CricXAI.git
+cd CricXAI
+python -m venv venv && source venv/Scripts/activate   # or venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Data pipeline
+### Run on real data (Cricsheet)
 
-### 1. Resolve match IDs
-
-```bash
-python -m scripts.match_ids --init-manual-file
-```
-
-Creates `data/match_ids_manual.json` for hand-curating match IDs per
-tournament. ESPNcricinfo does not publish a stable "list every ODI match"
-endpoint, so `scripts/match_ids.py` tries a best-effort series-schedule API
-call first (configure a series ID in `scripts.match_ids.TOURNAMENTS`) and
-falls back to whatever you've entered in the manual file.
+The Cricsheet archive is vendored at `data/external/cricsheet/odis_json.zip`.
 
 ```bash
-python -m scripts.match_ids --tournament world_cup_2023
+make real     # cricsheet_ingest -> build_features -> train   (~15 min, ~1.2 GB RAM)
+make api      # uvicorn on http://127.0.0.1:8000
 ```
 
-### 2. Scrape commentary
+Open **http://127.0.0.1:8000** for the web console; the OpenAPI schema is at
+`/v1/openapi.json`.
+
+### Run on mock data (fast, deterministic — what CI uses)
 
 ```bash
-python -m scripts.scraper --tournament world_cup_2023 --batch-size 15
+make models   # mock_data -> build_features -> train   (~1 min)
+make api
 ```
 
-Scrapes up to `--batch-size` not-yet-saved matches from
-`hs-consumer-api.espncricinfo.com`'s commentary endpoint, saving one combined
-JSON file per match to `data/raw/{match_id}.json`. Idempotent — a match
-already on disk is skipped without a network call. Polite by default: 2.5s
-between page requests, 5s between matches, a 15s pause every 5 matches.
-
-**Note:** this endpoint is unofficial and can 403 requests from some
-networks/IP ranges (observed during development from a sandboxed CI-like
-environment — even the plain espncricinfo.com homepage was blocked there).
-If scraping fails everywhere, verify from a normal residential/browser
-network first before assuming the code is broken, and check whether this
-also affects the GitHub Actions runner IPs before relying on the scheduled
-cron workflow.
-
-### 3. Parse commentary into structured data
+### Individual steps
 
 ```bash
-python -m scripts.nlp_parser --input-dir data/raw --output-dir data/processed
+python -m scripts.cricsheet_ingest      # or: scripts.mock_data --num-matches 100
+python -m scripts.build_features
+python -m scripts.train
+python -m uvicorn app.api.main:app --reload --port 8000
 ```
 
-Extracts ball length, line, shot type (via phrase-matching dictionaries),
-outcome, and dismissal type from each delivery's commentary text. Writes
-`deliveries.csv` (one row per ball) and `matches.csv` (one row per match).
-Logs what percentage of rows each field was successfully extracted for —
-watch this if you add new tournaments, since ESPN's phrasing can vary.
+Processed CSVs and model artifacts are git-ignored and regenerated by the
+commands above.
 
-### 4. Build ML features
+---
+
+## Architecture
+
+```
+Cricsheet ODI JSON  ──cricsheet_ingest.py──┐
+                                           ├──►  data/processed/{deliveries,matches}.csv
+mock_data.py  (simulator, same schema) ────┘
+                                                        │
+                                        build_features.py │  leakage-safe:
+                                                        ▼  every feature known pre-ball,
+                                            delivery_features.csv   historical stats exclude
+                                                        │            the row's own match
+                                              train.py  │  LightGBM, GroupKFold(match_id)
+                                                        ▼
+                        data/models/<model_id>/<version>/{model.pkl, meta.json,
+                        eval.md, shap_background.parquet}  +  active.json pointer
+                                                        │
+   ┌────────────────────────── app/api  (FastAPI /v1) ──┴───────────────────┐
+   │  data.py     in-memory CSV store (batsmen, teams, H2H, squads)         │
+   │  service.py  situation → pressure/phase → engine                        │
+   │  engine/     candidate_grid → score M1/M3 → rank by phase objective →   │
+   │              M2 dismissal-type + SHAP reasons + heuristic field         │
+   │  static/     index.html + players_data.js  (single-file console)        │
+   └───────────────────────────────────────────────────────────────────────┘
+```
+
+- **M1 `dismissal_prob`** — calibrated P(wicket) on this ball (isotonic).
+- **M2 `dismissal_type`** — multiclass, conditional on a wicket.
+- **M3 `expected_runs`** — runs off the bat this ball.
+- **M4** — the recommendation engine (grid scoring + phase-weighted ranking),
+  not a learned policy.
+
+Module-by-module notes: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Decision log & gotchas: [`docs/MEMORY.md`](docs/MEMORY.md).
+
+---
+
+## Data
+
+| Source | What | Rows | Licence |
+|---|---|---|---|
+| **Cricsheet** `odis_json.zip` | Real ball-by-ball, 2,569 men's ODIs, 2002–2026 | 1,362,629 deliveries | ODC-BY (attribution) |
+| **`mock_data.py`** | Deterministic ODI simulator, 10 illustrative squads | configurable | n/a |
+
+Both write the **same schema** so `build_features.py` and `train.py` are
+source-agnostic. Every row is tagged `source` (`cricsheet` / `mock`).
+
+`deliveries.csv` columns: `match_id, innings, over, ball_in_over, batsman,
+bowler, text, total_runs, ball_length, ball_line, shot_type, outcome,
+is_wicket, dismissal_type, player_out, batting_team, source` (+ `match_date`
+joined at load).
+
+Provenance, licence terms and gaps: [`data/external/cricsheet/SOURCE.md`](data/external/cricsheet/SOURCE.md).
+
+---
+
+## Models — current numbers
+
+Grouped 5-fold CV by `match_id` on the full real dataset
+([`data/models/EVAL.md`](data/models/EVAL.md)):
+
+| Model | Metric | Real data | Naïve baseline |
+|---|---|---|---|
+| M1 dismissal probability | Brier / ROC-AUC | **0.02600** / **0.749** | 0.02656 (−2.1%) |
+| M2 dismissal type | macro-F1 / accuracy | **0.447** / **0.782** | — |
+| M3 expected runs | MAE | **0.867** | 0.880 (−1.5%) |
+
+M1 ranks risky balls above safe ones (AUC 0.749) but the calibrated gain over
+"everyone is ~2.7%" is small; M3 barely beats predicting the mean. This is
+expected without delivery-type features (see below) and is the main argument
+for closing the length/line data gap.
+
+---
+
+## API (`/v1`)
+
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `/healthz`, `/readyz` | liveness / readiness (+ model version) |
+| `GET` | `/v1/reference` | enums: phases, lengths, lines, bowler types, dismissal types |
+| `GET` | `/v1/teams?since=` | batting teams, optionally only those active since a date |
+| `GET` | `/v1/batsmen?q=&team=&since=&role=&limit=` | player list; `role=bowler` for the bowling side |
+| `GET` | `/v1/batsmen/{id}/profile` | real batsman vulnerability profile |
+| `GET` | `/v1/matchup?batsman=&bowler=&since=` | **real batsman-vs-bowler head-to-head** |
+| `GET` | `/v1/team/{team}/squad?since=` | ranked squad with batting/bowling aggregates |
+| `GET` | `/v1/team-matchup?a=&b=&since=` | historical team head-to-head W/L |
+| `GET` | `/v1/matches`, `/v1/matches/{id}/timeline` | match list / ball-by-ball timeline |
+| `POST` | `/v1/recommendation` | ranked delivery recommendations + reasons + field |
+| `POST` | `/v1/grid` | every length × line cell scored (for the heatmap) |
+| `POST` | `/v1/predict/dismissal` | score one specific length/line |
+
+Interactive docs at `/docs` when the server is running.
+
+---
+
+## Web console (served at `/`)
+
+Single HTML file (`app/api/static/index.html` + `players_data.js`).
+
+| Tab | Backed by |
+|---|---|
+| **Live Console** | `/v1/recommendation` + `/v1/grid` — real models & store |
+| **Player vs Player** | `/v1/matchup` (exact H2H) + recommendation for the picked bowler type |
+| **Matchup & XI AI** | `/v1/team/{team}/squad` + `/v1/team-matchup` — real aggregates & W/L |
+| Batsman Dossier, 10-Nation Rosters, Stadium Arena | hardcoded demo data in `players_data.js` — **not** model output |
+
+Player and team dropdowns default to post-2023-World-Cup players.
+
+---
+
+## Development
 
 ```bash
-python -m scripts.build_features --input data/processed/deliveries.csv --output data/processed/delivery_features.csv
+make test     # pytest tests/  (69 tests, offline, ~1 min)
+make lint     # ruff check
+make fmt      # ruff format
+make help     # all targets
 ```
 
-Engineers match-context (phase, score, wickets, pressure index), batsman/
-bowler rolling stats (this innings/spell only), and batsman historical
-vulnerability features (dismissal type / length / line breakdown, phase
-averages, pressure vs. normal splits) — all computed using only information
-available before each ball, and historical features are computed across
-every match *except* the one the row belongs to, to avoid leakage once this
-becomes training data.
+CI (`.github/workflows/ci.yml`): ruff → build the **mock** dataset + models →
+full test suite → Docker image build. Leakage invariants
+([`docs/RULES.md`](docs/RULES.md) R-1…R-6) are enforced in
+`tests/leakage/`.
 
-## Testing
+### Project layout
 
-```bash
-python -m pytest tests/ -v
+```
+scripts/
+  cricsheet_ingest.py   Cricsheet ODI JSON  -> deliveries.csv / matches.csv
+  mock_data.py          deterministic ODI simulator (same output schema)
+  build_features.py     -> delivery_features.csv  (leakage-safe)
+  train.py              M1/M2/M3 -> data/models/ + active.json
+  scraper.py, nlp_parser.py, match_ids.py   ESPN commentary path (dormant)
+  analyse.py            CLI to pretty-print a recommendation
+app/
+  api/       FastAPI app, routers, CSV-backed DataStore, static console
+  engine/    candidate grid, phase objective, field heuristic, reason templates
+  ml/        feature list, model registry, SHAP
+  utils/     logger, file IO, shared cricket vocabulary
+data/
+  external/cricsheet/   vendored odis_json.zip + SOURCE.md
+  processed/ models/    git-ignored, regenerated by make
+docs/        PRD, TRD, architecture, design, rules, phases, memory
+tests/       scripts / engine / models / api / leakage
 ```
 
-All tests run offline against small synthetic fixtures — no network access
-or scraped data required.
+---
+
+## Known limitations
+
+- **No ball length / line / shot type in the data.** Cricsheet is
+  scorecard + outcome granularity. These columns ingest as `"unknown"`, so
+  M1/M3 learn no length/line signal and the candidate grid scores every cell
+  near-identically — the "recommended delivery" is effectively arbitrary.
+  What's real on those cards: the batsman's phase/pressure history, the
+  dismissal-type split, the head-to-head record, the field logic, the SHAP
+  reasons (which only ever cite situation/history features).
+- **No Afghanistan men's matches** — withheld by Cricsheet policy. Rashid
+  Khan and the whole side are absent from the data.
+- **No bowler type in the data** — the console/PvP make the user pick it.
+- **Marginal model lift** — M1 beats base rate by ~2%, M3 by ~1.5%. Real
+  volume didn't fix this; delivery-type features would.
+- **Server boot ~90 s / ~1.2 GB RAM** — the in-memory CSV store loads three
+  large files and precomputes per-player context; fine for local use, needs
+  work before a real deployment (Phase 3).
+- Three console tabs (Dossier / Rosters / Stadium) still render fabricated
+  scouting text and, in one case, a `Math.random()` heatmap.
+
+---
+
+## Docs
+
+| File | Contents |
+|---|---|
+| [`docs/PRD.md`](docs/PRD.md) | product requirements |
+| [`docs/TRD.md`](docs/TRD.md) | technical requirements, model specs |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | modules and data flow |
+| [`docs/PHASES.md`](docs/PHASES.md) | phased roadmap + exit gates |
+| [`docs/RULES.md`](docs/RULES.md) | leakage / quality invariants CI enforces |
+| [`docs/MEMORY.md`](docs/MEMORY.md) | decision log, gotchas, glossary |
+| [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/UI_WORKFLOW.md`](docs/UI_WORKFLOW.md) | design language, screen flows |
+| [`docs/BACKEND_SCHEMA.md`](docs/BACKEND_SCHEMA.md) | planned Postgres schema (Phase 3) |
+
+---
+
+## Licence & attribution
+
+Ball-by-ball data © [Cricsheet](https://cricsheet.org), used under the
+Open Data Commons Attribution Licence (ODC-BY). Confirm current terms before
+any commercial use. No project licence file is set yet.

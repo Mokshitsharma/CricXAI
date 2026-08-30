@@ -12,21 +12,21 @@ Last updated: 2026-08-28
 
 | Area | State |
 | --- | --- |
-| Data pipeline (scrape → parse → features) | Built, tested offline (Phase 0 done) |
-| Mock data (10 squads, 100 ODIs) | Built this session — `scripts/mock_data.py` |
-| Feature table | Built from mock data |
-| Models M1/M2/M3 | Trained on mock data — `scripts/train.py`, artifacts in `data/models/` |
-| Recommendation engine | Built — `app/engine/` |
-| API (`/v1`) | Built (CSV-backed) — `app/api/` |
-| Web console | Design canvas + Next.js scaffold in `web/` |
+| Data pipeline (ingest/parse → features) | Built, tested offline (Phase 0 done) |
+| Mock data (10 squads, 100 ODIs) | `scripts/mock_data.py` — tests/CI + offline dev only |
+| Feature table | Built from **real Cricsheet data** (`make real`); mock path still works |
+| Models M1/M2/M3 | Active artifacts trained on **real data** (`data_source: mixed/real`) — `scripts/train.py` |
+| Recommendation engine | Built — `app/engine/` (length×line grid is flat on real data, see Cricsheet decision) |
+| API (`/v1`) | Built (CSV-backed) — `app/api/`; adds teams / matchup / team-squad / team-matchup |
+| Web console | Single-file `app/api/static/`; Console + PvP + Matchup/XI wired to `/v1`; Dossier/Rosters/Stadium still demo data. `web/` = design canvas only, no Next.js app yet |
 | Deployment | Docker + compose + CI + deploy config in `deploy/` |
 | Postgres / Redis / object storage | Specified, not wired (Phase 3) |
 | Auth / billing | Specified, not built (Phase 5) |
 | Real ESPN scraped data | Not pursued — `TOURNAMENTS` series IDs still `None` |
 | Real Cricsheet data | Ingested (Phase 2) — `scripts/cricsheet_ingest.py`, 2,569 male ODIs / 1.36M deliveries, `source="cricsheet"`. **No length/line/shot** in the source (`"unknown"`). |
 
-Run the whole mock slice: `make demo` (or the commands in
-[APP_FLOW.md](APP_FLOW.md) §1).
+Run on real data: `make real` (cricsheet_ingest → features → train, ~15 min).
+Run the mock slice: `make models` / `make demo` (or [APP_FLOW.md](APP_FLOW.md) §1).
 
 Python: `venv/` now has lightgbm 4.7 + shap 0.52 installed (was missing
 them); `pip install -r requirements.txt` covers everything. Global 3.13
