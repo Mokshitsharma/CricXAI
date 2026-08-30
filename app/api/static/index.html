@@ -2095,6 +2095,10 @@
         ]);
 
         if (mySeq !== seq) return;
+        if (rec.situation && body.match.target && body.match.innings === 2) {
+          const oversLeft = Math.max(0.1, 50 - (body.match.over + (body.match.ball_in_over - 1) / 6));
+          rec.situation.required_run_rate = Math.max(0, (body.match.target - body.match.score) / oversLeft);
+        }
         renderRecommendation(rec);
         renderConsoleHeatmap(grid, rec.recommendations[0]);
       } catch (err) {
@@ -2184,26 +2188,30 @@
       let expRuns = isDeath ? 0.9 : (isPP ? 1.1 : 1.2);
       let fieldLabel = isDeath ? "Death Yorker Ring" : (isPP ? "Powerplay Slip Cordon" : "Standard 5-4 Field");
 
+      const m = body.match;
+      const rrr = (m.target && m.innings === 2)
+        ? Math.max(0, (m.target - m.score) / Math.max(0.1, 50 - (m.over + (m.ball_in_over - 1) / 6)))
+        : null;
       renderRecommendation({
         situation: {
           phase: isDeath ? "death" : (isPP ? "powerplay" : "middle"),
-          pressure_index: (body.match.wickets * 0.9 + 2.5).toFixed(1),
-          required_run_rate: 7.85
+          pressure_index: (m.wickets * 0.9 + 2.5).toFixed(1),
+          required_run_rate: rrr
         },
         recommendations: [
           {
             rank: 1,
-            label: topLabel,
+            label: topLabel + "  (offline estimate)",
             length: isDeath ? "yorker" : (isPP ? "full" : "good"),
             line: isDeath ? "off_stump" : "outside_off",
             dismissal_probability: prob,
             expected_runs: expRuns,
-            confidence: "high",
+            confidence: "low",
             field_label: fieldLabel,
             reasons: [
-              `Historical phase vulnerability: batsman edges higher outside off in ${isDeath ? "death" : "early"} overs.`,
-              `Bowler type (${body.bowler_type.replace(/_/g, " ")}) produces high dot-ball pressure on this trajectory.`,
-              `Required run-rate forces high-risk aggressive strokeplay.`
+              "API unavailable — showing a static phase-based estimate, not model output.",
+              `Bowler type: ${body.bowler_type.replace(/_/g, " ")}; phase: ${isDeath ? "death" : (isPP ? "powerplay" : "middle")}.`,
+              "Reconnect to /v1 for the real M1/M3 recommendation."
             ]
           },
           {
