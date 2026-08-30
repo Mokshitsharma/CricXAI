@@ -469,30 +469,28 @@
       <!-- TAB 2: VISUAL GROUND & HEATMAP -->
       <div class="analysis-tab-panel" id="tabPanel2">
         <div style="display:grid; grid-template-columns: minmax(0, 1fr) 380px; gap:24px; align-items:start;">
-          <!-- Left: Synchronized 5x7 Danger Matrix Heatmap -->
+          <!-- Left: Real dismissal profile -->
           <div class="glass-panel danger-heatmap-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
               <div>
                 <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase;">
-                  DISMISSAL DANGER MATRIX (5 &times; 7)
+                  DISMISSAL PROFILE
                 </span>
-                <h3 style="font-size:16px; font-weight:700; margin-top:2px;">Length &times; Line Probability Grid</h3>
+                <h3 style="font-size:16px; font-weight:700; margin-top:2px;">How this batsman actually gets out</h3>
               </div>
-              <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">P(Wicket) &times; 100</span>
+              <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">Cricsheet ODIs · since 2023 WC</span>
             </div>
 
-            <div class="heatmap-grid-scroll">
-              <div class="heatmap-table" id="dossierHeatmapTable"></div>
-            </div>
+            <div id="dossierHeatmapTable"></div>
           </div>
 
-          <!-- Right: Visual Tactical Field Diagram -->
+          <!-- Right: Recommended field for the situation -->
           <div class="glass-panel" style="padding:22px;">
             <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--accent-green); text-transform:uppercase;">
-              CUSTOM FIELD PLACEMENT
+              RECOMMENDED FIELD · MIDDLE OVERS
             </span>
             <div style="font-size:15px; font-weight:700; margin:4px 0 14px;" id="dossierPresetName">
-              Fourth-Stump Catchers
+              Standard field
             </div>
 
             <!-- Mini ground visualizer -->
@@ -1467,12 +1465,11 @@
         options: { top_k: 5 },
       };
 
-      let profile, rec, grid;
+      let profile, rec;
       try {
-        [profile, rec, grid] = await Promise.all([
+        [profile, rec] = await Promise.all([
           fetch(`/v1/batsmen/${encodeURIComponent(activeDossierBatsmanId)}/profile`).then(r => r.ok ? r.json() : null),
           postJson("/v1/recommendation", recBody),
-          postJson("/v1/grid", recBody),
         ]);
       } catch (e) { console.warn("dossier fetch failed:", e); return; }
       if (mySeq !== dossierSeq || !profile) return;
@@ -1508,9 +1505,8 @@
       setTxt("dossierFieldDirective", top.field_label || top.field_preset || "Standard field");
       setTxt("dossierPresetName", top.field_label || top.field_preset || "Standard field");
 
-      const cells = (grid.cells || []).map(c => ({ length: c.length, line: c.line, prob: +(c.dismissal_probability * 100).toFixed(1) }));
-      renderDossierHeatmap(cells, top.length, top.line);
-      renderMiniGround(top.field_label || "");
+      renderDossierProfileViz(profile);
+      renderDossierField(top.field_positions || [], top.field_label || "");
 
       setTxt("mlDismissalProb", (top.dismissal_probability * 100).toFixed(1) + "%");
       setTxt("mlExpectedRuns", top.expected_runs.toFixed(2));
@@ -1525,51 +1521,74 @@
       }
     }
 
-    function renderDossierHeatmap(cells, recLen, recLine) {
-      const table = document.getElementById("dossierHeatmapTable");
-      if (!table) return;
-      const lengths = ["yorker", "full", "good", "short", "bouncer"];
-      const lines = ["wide_outside_off", "outside_off", "off_stump", "middle_stump", "leg_stump", "down_leg", "wide_down_leg"];
-      const lineShort = s => s.replace(/_/g, " ").replace("outside", "out").replace("wide out off", "wide off").replace("wide down leg", "wide leg");
-      const ramp = ["#172620", "#2b3223", "#453823", "#623820", "#84371e", "#a8351c"];
-      const map = {};
-      cells.forEach(c => { map[c.length + "|" + c.line] = c.prob; });
-      const vals = cells.map(c => c.prob);
-      const lo = Math.min(...vals, 0), hi = Math.max(...vals, 1);
-      let html = `<div></div>` + lines.map(l => `<div class="hm-col-header">${lineShort(l)}</div>`).join("");
-      lengths.forEach(len => {
-        html += `<div class="hm-row-label">${len}</div>`;
-        lines.forEach(ln => {
-          const v = map[len + "|" + ln];
-          if (v === undefined) { html += `<div class="hm-cell"></div>`; return; }
-          const isRec = len === recLen && ln === recLine;
-          const idx = hi > lo ? Math.min(5, Math.floor((v - lo) / (hi - lo) * 6)) : 0;
-          const bg = isRec ? "#00E676" : ramp[idx];
-          html += `<div class="hm-cell ${isRec ? 'recommended' : ''}" style="background:${bg}; color:${isRec ? '#000' : '#ddd'}; font-weight:${isRec ? '800' : '600'};" title="${len} ${ln}">${v.toFixed(1)}%</div>`;
-        });
-      });
-      table.innerHTML = html;
+    function renderDossierProfileViz(profile) {
+      const box = document.getElementById("dossierHeatmapTable");
+      if (!box || !profile) return;
+      box.style.display = "block";
+
+      const mix = Object.entries(profile.dismissal_type_pct || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+      const counts = profile.dismissal_count_by_type || {};
+      const maxPct = Math.max(1, ...mix.map(([, v]) => v));
+      const bars = mix.map(([k, v]) => `
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:9px;">
+          <div style="width:78px; font-size:12px; color:var(--text-secondary); text-transform:capitalize;">${k.replace(/_/g, " ")}</div>
+          <div style="flex:1; background:rgba(255,255,255,0.05); border-radius:4px; height:20px; overflow:hidden;">
+            <div style="width:${(v / maxPct * 100).toFixed(1)}%; height:100%; background:linear-gradient(90deg,#00E676,#10B981); border-radius:4px;"></div>
+          </div>
+          <div style="width:96px; text-align:right; font-family:var(--font-mono); font-size:12px; color:var(--text-primary);">
+            ${v}% <span style="color:var(--text-muted);">(${counts[k] || 0})</span>
+          </div>
+        </div>`).join("");
+
+      const phase = [
+        ["Phase average", profile.phase_average],
+        ["Under chase pressure", profile.average_under_pressure],
+        ["Normal situations", profile.average_normal],
+      ];
+      const maxAvg = Math.max(1, ...phase.map(([, v]) => v || 0));
+      const phaseBars = phase.map(([label, v]) => `
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:9px;">
+          <div style="width:150px; font-size:12px; color:var(--text-secondary);">${label}</div>
+          <div style="flex:1; background:rgba(255,255,255,0.05); border-radius:4px; height:20px; overflow:hidden;">
+            <div style="width:${((v || 0) / maxAvg * 100).toFixed(1)}%; height:100%; background:linear-gradient(90deg,#38BDF8,#0EA5E9); border-radius:4px;"></div>
+          </div>
+          <div style="width:52px; text-align:right; font-family:var(--font-mono); font-size:12px; color:var(--text-primary);">${(v || 0).toFixed(1)}</div>
+        </div>`).join("");
+
+      box.innerHTML = `
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin:4px 0 10px;">
+          Dismissal mix &mdash; ${profile.dismissals} outs in ${profile.matches} matches
+        </div>
+        ${bars || '<div style="color:var(--text-muted); font-size:13px;">No dismissals recorded.</div>'}
+        <div style="height:1px; background:rgba(255,255,255,0.08); margin:16px 0;"></div>
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:10px;">
+          Batting average by situation
+        </div>
+        ${phaseBars}
+        <div style="margin-top:12px; font-size:11px; color:var(--text-muted); line-height:1.5;">
+          Length &times; line danger isn't shown: the Cricsheet source has no ball-tracking, so the model can't
+          separate a good-length off-stump ball from a wide half-volley. The breakdown above is the real signal.
+        </div>`;
     }
 
-
-    function renderMiniGround(fieldInstruction) {
-      const container = document.getElementById("miniGroundSvg");
-      if (!container) return;
-      container.innerHTML = `
-        <ellipse cx="140" cy="140" rx="125" ry="125" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" stroke-dasharray="4 4"/>
-        <ellipse cx="140" cy="140" rx="65" ry="65" fill="none" stroke="#00E676" stroke-width="1.5" stroke-dasharray="3 3"/>
-        <rect x="132" y="105" width="16" height="70" fill="#2d291e" rx="3"/>
-        <circle cx="140" cy="100" r="5.5" fill="#EF4444"/>
-        <circle cx="140" cy="178" r="5.5" fill="#00E676"/>
-        <circle cx="150" cy="94" r="4.5" fill="#00E676"/>
-        <circle cx="158" cy="97" r="4.5" fill="#00E676"/>
-        <circle cx="166" cy="103" r="4.5" fill="#00E676"/>
-        <circle cx="185" cy="115" r="4.5" fill="#00E676"/>
-        <circle cx="210" cy="160" r="5" fill="#00E676"/>
-        <circle cx="95" cy="155" r="5" fill="#00E676"/>
-        <circle cx="85" cy="115" r="5" fill="#00E676"/>
-        <circle cx="140" cy="60" r="5" fill="#00E676"/>
-      `;
+    function renderDossierField(positions, label) {
+      const svg = document.getElementById("miniGroundSvg");
+      if (!svg) return;
+      const PX = x => 40 + x * 320;   // viewBox 0 0 400 380
+      const PY = y => 30 + y * 320;
+      const dots = (positions || []).map(p => `
+        <circle cx="${PX(p.x).toFixed(0)}" cy="${PY(p.y).toFixed(0)}" r="6" fill="#00E676" stroke="#03140c" stroke-width="1.5">
+          <title>${(p.name || "").replace(/_/g, " ")}</title>
+        </circle>`).join("");
+      svg.innerHTML = `
+        <ellipse cx="200" cy="190" rx="175" ry="175" fill="#0a1f14" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+        <ellipse cx="200" cy="190" rx="95" ry="95" fill="none" stroke="rgba(0,230,118,0.25)" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <rect x="192" y="150" width="16" height="80" fill="#2d291e" rx="3"/>
+        <circle cx="200" cy="150" r="5" fill="#EF4444"><title>striker</title></circle>
+        <circle cx="200" cy="230" r="5" fill="#FBBF24"><title>non-striker</title></circle>
+        ${dots}`;
+      const nameEl = document.getElementById("dossierPresetName");
+      if (nameEl && label) nameEl.textContent = label;
     }
 
     // ==========================================
