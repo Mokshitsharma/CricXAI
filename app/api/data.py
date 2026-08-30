@@ -53,17 +53,32 @@ class DataStore:
             self.deliveries["match_id"].astype(str).map(date_by_match)
         )
 
+        # Bowling team per delivery = the match's other team (needs matches
+        # home/away + per-ball batting_team; absent in some schemas).
+        if "batting_team" in self.deliveries.columns and {
+            "home_team", "away_team"
+        } <= set(self.matches.columns):
+            mid = self.deliveries["match_id"].astype(str)
+            home = mid.map(dict(zip(self.matches["match_id"].astype(str), self.matches["home_team"], strict=False)))
+            away = mid.map(dict(zip(self.matches["match_id"].astype(str), self.matches["away_team"], strict=False)))
+            self.deliveries["bowling_team"] = np.where(
+                self.deliveries["batting_team"].eq(home), away, home
+            )
+
         self._hist_cols = historical_feature_columns(self.features)
         self._id_to_name: dict[str, str] = {}
         self._name_to_id: dict[str, str] = {}
-        for name in sorted(self.deliveries["batsman"].dropna().unique()):
+        both = pd.concat(
+            [self.deliveries["batsman"], self.deliveries["bowler"]], ignore_index=True
+        ).dropna().unique()
+        for name in sorted(both):
             pid = f"player-{slugify(name)}"
             self._id_to_name[pid] = name
             self._name_to_id[name] = pid
 
         self._batsman_ctx = self._precompute_batsman_context()
         self._feature_means = self._precompute_feature_means()
-        self._teams, self._player_team = self._precompute_player_directory()
+        self._teams, self._player_team, self._bowler_team = self._precompute_player_directory()
         self.logger.info(
             "DataStore ready: %s deliveries, %s matches, %s batsmen, %s teams",
             len(self.deliveries), len(self.matches), len(self._id_to_name), len(self._teams),
@@ -118,24 +133,38 @@ class DataStore:
         team: str | None = None,
         since: str | None = None,
         limit: int = 200,
+        role: str = "batter",
     ) -> list[dict]:
-        """Every player who has *batted*, optionally filtered by team and by a
-        minimum match date (ISO ``YYYY-MM-DD``). ``balls`` / ``dismissals`` /
-        ``matches`` are counted within the ``since`` window; ``team`` is the
-        most recent team the player batted for (all-time)."""
+        """Players filtered by team and a minimum match date (ISO
+        ``YYYY-MM-DD``). ``role="batter"`` lists everyone who has batted, with
+        ``balls`` faced / ``dismissals`` / ``matches`` in the window;
+        ``role="bowler"`` lists everyone who has bowled, with ``balls`` bowled
+        / ``wickets`` / ``matches``. ``team`` is the most recent team on that
+        side (all-time)."""
         d = self.deliveries
-        mask = d["batsman"].notna()
+        bowler_role = role == "bowler"
+        who = "bowler" if bowler_role else "batsman"
+        team_col = "bowling_team" if bowler_role else "batting_team"
+        team_map = self._bowler_team if bowler_role else self._player_team
+
+        mask = d[who].notna()
         if since and d["match_date"].notna().any():
             mask &= d["match_date"].fillna("") >= since
-        if team and "batting_team" in d.columns:
-            mask &= d["batting_team"] == team
-        sub = d.loc[mask, ["batsman", "match_id", "outcome", "is_wicket"]]
+        if team and team_col in d.columns:
+            mask &= d[team_col] == team
+        sub = d.loc[mask, [who, "match_id", "outcome", "is_wicket"]]
         if sub.empty:
             return []
 
-        faced = sub["outcome"].ne("wide")
-        grouped = sub.assign(_faced=faced.astype(int), _wkt=sub["is_wicket"].astype(int)).groupby("batsman")
-        agg = grouped.agg(balls=("_faced", "sum"), dismissals=("_wkt", "sum"), matches=("match_id", "nunique"))
+        if bowler_role:
+            countable = ~sub["outcome"].isin(["wide", "no_ball"])  # legal balls bowled
+        else:
+            countable = sub["outcome"].ne("wide")  # balls faced
+        grouped = sub.assign(
+            _n=countable.astype(int), _wkt=sub["is_wicket"].astype(int)
+        ).groupby(who)
+        agg = grouped.agg(n=("_n", "sum"), wkt=("_wkt", "sum"), matches=("match_id", "nunique"))
+        count_key = "wickets" if bowler_role else "dismissals"
 
         rows = []
         for name, r in agg.iterrows():
@@ -146,14 +175,150 @@ class DataStore:
                 {
                     "id": self.batsman_id(name),
                     "name": name,
-                    "team": self._player_team.get(name) or None,
-                    "balls": int(r["balls"]),
-                    "dismissals": int(r["dismissals"]),
+                    "team": team_map.get(name) or None,
+                    "balls": int(r["n"]),
+                    count_key: int(r["wkt"]),
                     "matches": int(r["matches"]),
                 }
             )
         rows.sort(key=lambda x: x["balls"], reverse=True)
         return rows[:limit]
+
+    def head_to_head(self, batsman: str, bowler: str, since: str | None = None) -> dict:
+        """Real batsman-vs-bowler record from the ball-by-ball data."""
+        d = self.deliveries
+        mask = (d["batsman"] == batsman) & (d["bowler"] == bowler)
+        if since and d["match_date"].notna().any():
+            mask &= d["match_date"].fillna("") >= since
+        sub = d[mask]
+
+        out = {
+            "batsman": batsman, "bowler": bowler, "balls": 0, "runs": 0,
+            "dismissals": 0, "strike_rate": 0.0, "dot_pct": 0.0,
+            "boundary_pct": 0.0, "dismissal_breakdown": {}, "matches": 0,
+            "first_seen": None, "last_seen": None,
+        }
+        if sub.empty:
+            return out
+
+        legal = sub[~sub["outcome"].isin(["wide", "no_ball"])]
+        balls = int(len(legal))
+        # runs conceded to the batsman (exclude wide/bye/leg_bye rows)
+        off_bat = sub[~sub["outcome"].isin(["wide", "bye", "leg_bye"])]
+        runs = int(off_bat["total_runs"].fillna(0).sum())
+        outs = sub[sub["is_wicket"]]
+        if "player_out" in sub.columns:
+            outs = outs[outs["player_out"] == batsman]
+        dots = int((legal["outcome"] == "dot").sum())
+        bdry = int(sub["outcome"].isin(["four", "six"]).sum())
+
+        out.update(
+            balls=balls,
+            runs=runs,
+            dismissals=int(len(outs)),
+            strike_rate=round(100.0 * runs / balls, 1) if balls else 0.0,
+            dot_pct=round(100.0 * dots / balls, 1) if balls else 0.0,
+            boundary_pct=round(100.0 * bdry / balls, 1) if balls else 0.0,
+            dismissal_breakdown=outs["dismissal_type"].value_counts().to_dict(),
+            matches=int(sub["match_id"].nunique()),
+        )
+        if "match_date" in sub.columns and sub["match_date"].notna().any():
+            out["first_seen"] = str(sub["match_date"].min())
+            out["last_seen"] = str(sub["match_date"].max())
+        return out
+
+    def team_squad(self, team: str, since: str | None = None) -> list[dict]:
+        """A team's players (batted or bowled in the window), each with real
+        batting/bowling aggregates, an inferred role, and a 0-100 rating."""
+        batters = {p["name"]: p for p in self.list_players(team=team, since=since, limit=500, role="batter")}
+        bowlers = {p["name"]: p for p in self.list_players(team=team, since=since, limit=500, role="bowler")}
+        d = self.deliveries
+        base = d["match_date"].notna().any()
+
+        def bat_runs(name: str) -> int:
+            m = (d["batsman"] == name) & (~d["outcome"].isin(["wide", "bye", "leg_bye"]))
+            if since and base:
+                m &= d["match_date"].fillna("") >= since
+            return int(d.loc[m, "total_runs"].fillna(0).sum())
+
+        def bowl_runs(name: str) -> int:
+            m = d["bowler"] == name
+            if since and base:
+                m &= d["match_date"].fillna("") >= since
+            return int(d.loc[m, "total_runs"].fillna(0).sum())
+
+        out = []
+        for name in sorted(set(batters) | set(bowlers)):
+            b = batters.get(name, {})
+            w = bowlers.get(name, {})
+            bat_b = int(b.get("balls", 0))
+            bowl_b = int(w.get("balls", 0))
+            # squad membership: a meaningful sample on at least one discipline
+            if bat_b < 90 and bowl_b < 90:
+                continue
+            runs = bat_runs(name) if bat_b else 0
+            outs = int(b.get("dismissals", 0))
+            conceded = bowl_runs(name) if bowl_b else 0
+            wkts = int(w.get("wickets", 0))
+            bat_sr = round(100.0 * runs / bat_b, 1) if bat_b else 0.0
+            bat_avg = round(runs / outs, 1) if outs else (float(runs) if runs else 0.0)
+            bowl_econ = round(6.0 * conceded / bowl_b, 2) if bowl_b else 0.0
+            bowl_avg = round(conceded / wkts, 1) if wkts else 0.0
+
+            is_bowler = bowl_b >= 90
+            is_batter = bat_b >= 90
+            role = "allrounder" if (is_bowler and is_batter and bat_avg >= 22 and wkts >= 5) else (
+                "bowler" if is_bowler and not (is_batter and bat_avg >= 28) else "batter"
+            )
+            # gentle, sample-capped scores so the top of a squad still spreads out
+            capped_avg = min(bat_avg, 62.0)
+            bat_score = capped_avg * 1.05 + bat_sr * 0.14 if bat_b else 0.0  # ~50@90 -> 65; ~40@110 -> 57
+            bowl_score = (
+                max(0.0, 112.0 - min(bowl_avg, 60.0) * 1.35 - bowl_econ * 4.6) if wkts else 0.0
+            )
+            if role == "allrounder":
+                rating = 0.55 * bat_score + 0.55 * bowl_score + 6
+            elif role == "bowler":
+                rating = bowl_score
+            else:
+                rating = bat_score
+            rating = round(min(100.0, max(1.0, rating)), 1)
+
+            out.append({
+                "id": self.batsman_id(name), "name": name, "role": role, "rating": rating,
+                "batting": {"balls": bat_b, "runs": runs, "outs": outs, "sr": bat_sr, "avg": bat_avg},
+                "bowling": {"balls": bowl_b, "runs": conceded, "wickets": wkts, "econ": bowl_econ, "avg": bowl_avg},
+            })
+        out.sort(key=lambda p: p["rating"], reverse=True)
+        return out
+
+    def team_matchup(self, team_a: str, team_b: str, since: str | None = None) -> dict:
+        """Historical head-to-head result record between two teams."""
+        m = self.matches
+        res = {"team_a": team_a, "team_b": team_b, "played": 0,
+               "team_a_wins": 0, "team_b_wins": 0, "no_result": 0, "team_a_win_pct": 50.0}
+        if not {"home_team", "away_team", "result"}.issubset(m.columns):
+            return res
+        pair = ((m["home_team"] == team_a) & (m["away_team"] == team_b)) | (
+            (m["home_team"] == team_b) & (m["away_team"] == team_a)
+        )
+        if since and "date" in m.columns:
+            pair &= m["date"].fillna("") >= since
+        sub = m[pair]
+        a_wins = b_wins = nr = 0
+        for r in sub["result"].fillna(""):
+            if team_a in r and "won" in r:
+                a_wins += 1
+            elif team_b in r and "won" in r:
+                b_wins += 1
+            else:
+                nr += 1
+        played = int(len(sub))
+        res.update(played=played, team_a_wins=a_wins, team_b_wins=b_wins, no_result=nr)
+        decided = a_wins + b_wins
+        if decided:
+            res["team_a_win_pct"] = round(100.0 * a_wins / decided, 1)
+        return res
 
     def batsman_feature_context(self, name: str) -> dict[str, float]:
         return self._batsman_ctx.get(name, {}).get("features", {})
@@ -235,17 +400,29 @@ class DataStore:
         means = self.features[cols].mean(numeric_only=True)
         return {k: float(v) for k, v in means.items() if not np.isnan(v)}
 
-    def _precompute_player_directory(self) -> tuple[list[str], dict[str, str]]:
-        """(sorted team list, {player -> most recent team batted for})."""
+    def _precompute_player_directory(
+        self,
+    ) -> tuple[list[str], dict[str, str], dict[str, str]]:
+        """(sorted team list, {batter -> latest batting team}, {bowler -> latest bowling team})."""
         d = self.deliveries
         if "batting_team" not in d.columns:
-            return [], {}
+            return [], {}, {}
         teams = sorted(t for t in d["batting_team"].dropna().unique())
-        dd = d.dropna(subset=["batsman", "batting_team"])
-        if "match_date" in dd.columns and dd["match_date"].notna().any():
-            dd = dd.sort_values("match_date", kind="stable")
-        player_team = dd.groupby("batsman")["batting_team"].last()
-        return teams, {str(k): str(v) for k, v in player_team.items()}
+        dated = "match_date" in d.columns and d["match_date"].notna().any()
+
+        bat = d.dropna(subset=["batsman", "batting_team"])
+        if dated:
+            bat = bat.sort_values("match_date", kind="stable")
+        player_team = {str(k): str(v) for k, v in bat.groupby("batsman")["batting_team"].last().items()}
+
+        bowler_team: dict[str, str] = {}
+        if "bowling_team" in d.columns:
+            bowl = d.dropna(subset=["bowler", "bowling_team"])
+            if dated:
+                bowl = bowl.sort_values("match_date", kind="stable")
+            bowler_team = {str(k): str(v) for k, v in bowl.groupby("bowler")["bowling_team"].last().items()}
+
+        return teams, player_team, bowler_team
 
 
 @lru_cache(maxsize=1)
