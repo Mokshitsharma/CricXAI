@@ -44,7 +44,7 @@ from sklearn.model_selection import GroupKFold, GroupShuffleSplit
 
 from app.ml.features import select_features
 from app.utils.cricket_constants import DISMISSAL_TYPES
-from app.utils.file_io import ensure_dir, write_json
+from app.utils.file_io import ensure_dir, read_frame, write_json
 from app.utils.logger import get_logger
 
 DEFAULT_INPUT = Path("data/processed/delivery_features.csv")
@@ -304,7 +304,7 @@ def _write_active_pointer(model_dir: Path, version: str, saved: dict[str, Path])
 # ---------------------------------------------------------------------------
 
 def run(input_path: Path, model_dir: Path, logger) -> dict:
-    df = pd.read_csv(input_path)
+    df = read_frame(input_path.with_suffix(""))  # prefers .parquet, falls back to .csv
     df["is_wicket"] = df["is_wicket"].astype(bool)
     source = "mock" if (df.get("source") == "mock").all() else "mixed/real"
     data_hash = _data_hash(df)
@@ -342,8 +342,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     logger = get_logger(__name__)
-    if not args.input.exists():
-        logger.error("Feature table not found: %s (run build_features first)", args.input)
+    stem = args.input.with_suffix("")
+    if not stem.with_suffix(".parquet").exists() and not stem.with_suffix(".csv").exists():
+        logger.error("Feature table not found: %s[.parquet|.csv] (run build_features first)", stem)
         return 1
     metrics = run(args.input, args.model_dir, logger)
     logger.info("Done. Summary: %s", json.dumps(metrics)[:400])

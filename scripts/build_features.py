@@ -32,7 +32,7 @@ from app.utils.cricket_constants import (
     UNKNOWN_ENCODING,
     phase_from_over,
 )
-from app.utils.file_io import ensure_dir
+from app.utils.file_io import write_frame
 from app.utils.logger import get_logger
 
 DEFAULT_INPUT_PATH = Path("data/processed/deliveries.csv")
@@ -42,6 +42,10 @@ TOTAL_OVERS = 50
 PRESSURE_CAP = 10.0
 PRESSURE_WICKET_WEIGHT = 2.0
 UNDER_PRESSURE_THRESHOLD = 5.0
+# Rolling strike rate off a 1-2 ball denominator can spike into the hundreds
+# of thousands; clip it to a cricket-plausible ceiling so it doesn't dominate
+# tree splits. Real sustained ODI strike rates top out well below this.
+STRIKE_RATE_CAP = 400.0
 
 
 def _sort_deliveries(df: pd.DataFrame) -> pd.DataFrame:
@@ -77,10 +81,14 @@ def add_batsman_rolling_features(df: pd.DataFrame) -> pd.DataFrame:
     df["batsman_balls_faced"] = is_faced_ball.groupby([df[c] for c in group_cols]).transform(
         lambda s: s.cumsum().shift(1).fillna(0)
     )
-    df["batsman_strike_rate"] = np.where(
-        df["batsman_balls_faced"] > 0,
-        100.0 * df["batsman_runs_so_far"] / df["batsman_balls_faced"],
+    df["batsman_strike_rate"] = np.clip(
+        np.where(
+            df["batsman_balls_faced"] > 0,
+            100.0 * df["batsman_runs_so_far"] / df["batsman_balls_faced"],
+            0.0,
+        ),
         0.0,
+        STRIKE_RATE_CAP,
     )
     dots_so_far = is_dot.groupby([df[c] for c in group_cols]).transform(
         lambda s: s.cumsum().shift(1).fillna(0)
@@ -150,7 +158,12 @@ def add_match_context_features(df: pd.DataFrame) -> pd.DataFrame:
 
     is_chasing = df["innings"] == 2
     raw_pressure = (required_run_rate - current_run_rate) + (df["innings_wickets"] / 10.0 * PRESSURE_WICKET_WEIGHT)
-    df["pressure_index"] = np.where(is_chasing, np.minimum(raw_pressure, PRESSURE_CAP), 0.0)
+    # Clip to [0, CAP] for chasing rows — a cruising chase yields a large
+    # negative raw value, and app/api/service.compute_pressure_index floors
+    # at 0 at serve time, so training must match (docs/RULES.md R-5).
+    df["pressure_index"] = np.where(
+        is_chasing, np.clip(raw_pressure, 0.0, PRESSURE_CAP), 0.0
+    )
     df = df.drop(columns=["target"])
     return df
 
@@ -339,9 +352,8 @@ def main() -> int:
     if features.empty:
         return 1
 
-    ensure_dir(args.output.parent)
-    features.to_csv(args.output, index=False)
-    logger.info("Wrote feature table to %s", args.output)
+    csv_path = write_frame(features, args.output.with_suffix(""))
+    logger.info("Wrote feature table to %s (+ .parquet)", csv_path)
     return 0
 
 

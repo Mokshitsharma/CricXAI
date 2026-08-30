@@ -1,24 +1,27 @@
+# Pinned to the versions the pipeline + tests are validated against
+# (2026-08-30). Bump deliberately, re-run `make real && make test`.
+
 # --- data pipeline ---
-requests
-pandas
-numpy
-python-dotenv
-tqdm
-pyyaml
-pyarrow
+requests==2.33.1
+pandas==3.0.2
+numpy==2.4.4
+python-dotenv==1.2.2
+tqdm==4.67.3
+pyyaml==6.0.3
+pyarrow==25.0.1
 
 # --- models ---
-scikit-learn>=1.6
-lightgbm
-shap
-joblib
+scikit-learn==1.8.0
+lightgbm==4.7.0
+shap==0.52.0
+joblib==1.5.3
 
 # --- api ---
-fastapi
-uvicorn[standard]
-pydantic>=2
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pydantic==2.13.5
 
 # --- dev / test ---
-pytest
-httpx
-ruff
+pytest==9.1.1
+httpx==0.28.1
+ruff==0.16.5

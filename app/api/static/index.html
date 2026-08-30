@@ -1198,7 +1198,7 @@
 
       if (pageId === "players") renderPlayersDatabase();
       if (pageId === "stadium" && window.cricketGround) window.cricketGround.renderPlayers();
-      if (pageId === "dossier") renderDossier();
+      if (pageId === "dossier") initDossierControls();
       if (pageId === "matchup") { initMatchupControls(); renderMatchupArena(); }
       if (pageId === "pvp") { initPvPControls(); renderDuelPrescription(); }
       if (pageId === "console") { initConsole(); fetchRecommendation(); }
@@ -1302,10 +1302,12 @@
     }
 
     function openPlayerInDossier(playerId) {
-      const p = window.CricXData.getPlayerById(playerId);
-      if (!p) return;
-      activeDossierCountry = p.country;
-      activeDossierBatsmanId = p.id;
+      const p = window.CricXData && CricXData.getPlayerById(playerId);
+      if (p) {
+        activeDossierCountry = p.country;   // real /v1/teams uses the same names
+        pendingDossierName = p.name;        // resolved against the real roster on load
+      }
+      dossierInited = false;               // re-init so the country/batsman reload
       navigateToPage("dossier");
     }
 
@@ -1394,31 +1396,50 @@
     // ==========================================
     // 3-STEP BATSMAN ANALYSIS DOSSIER
     // ==========================================
+    const DOSSIER_SINCE = "2023-11-20";
     let activeDossierCountry = "India";
-    let activeDossierBatsmanId = "player-virat-kohli";
+    let activeDossierBatsmanId = "";
     let activeDossierTab = 1;
+    let pendingDossierName = null;
+    let dossierInited = false;
+    let dossierSeq = 0;
 
     function initDossierControls() {
       const countrySel = document.getElementById("dossierCountrySelect");
-      if (!countrySel || !window.CricXData) return;
+      if (!countrySel) return;
+      if (dossierInited) { renderDossier(); return; }
+      dossierInited = true;
+      fetch(`/v1/teams?since=${DOSSIER_SINCE}`).then(r => r.json()).then(tj => {
+        const teams = (tj && tj.teams) || [];
+        countrySel.innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join("");
+        countrySel.value = teams.includes(activeDossierCountry) ? activeDossierCountry
+          : (teams.includes("India") ? "India" : teams[0]);
+        return loadDossierBatters(countrySel.value);
+      }).then(renderDossier).catch(e => console.warn("dossier init failed:", e));
+    }
 
-      const countries = window.CricXData.getEligibleCountries();
-      countrySel.innerHTML = countries.map(c => `<option value="${c.id}">${c.flag} ${c.name}</option>`).join("");
-      countrySel.value = activeDossierCountry;
-      onDossierCountryChange();
+    function loadDossierBatters(team) {
+      const sel = document.getElementById("dossierBatsmanSelect");
+      return fetch(`/v1/batsmen?team=${encodeURIComponent(team)}&since=${DOSSIER_SINCE}&limit=200`)
+        .then(r => r.json()).then(j => {
+          const list = (j && j.batsmen) || [];
+          sel.innerHTML = list.length
+            ? list.map(b => `<option value="${b.id}">${b.name} — ${b.balls}b, ${b.dismissals} out</option>`).join("")
+            : `<option value="">No players</option>`;
+          let pick = list[0] && list[0].id;
+          if (pendingDossierName) {
+            const m = list.find(b => b.name.toLowerCase().includes(pendingDossierName.toLowerCase())
+              || pendingDossierName.toLowerCase().includes(b.name.split(" ").pop().toLowerCase()));
+            if (m) pick = m.id;
+            pendingDossierName = null;
+          }
+          if (pick) { activeDossierBatsmanId = pick; sel.value = pick; }
+        });
     }
 
     function onDossierCountryChange() {
       activeDossierCountry = document.getElementById("dossierCountrySelect").value;
-      const batsmanSel = document.getElementById("dossierBatsmanSelect");
-      const squad = window.CricXData.getPlayersByCountry(activeDossierCountry);
-      batsmanSel.innerHTML = squad.map(p => `<option value="${p.id}">${p.name} (${p.battingHand})</option>`).join("");
-
-      if (squad[0]) {
-        activeDossierBatsmanId = squad[0].id;
-        batsmanSel.value = activeDossierBatsmanId;
-      }
-      renderDossier();
+      loadDossierBatters(activeDossierCountry).then(renderDossier);
     }
 
     function onDossierBatsmanChange() {
@@ -1428,95 +1449,111 @@
 
     function switchAnalysisTab(tabNumber) {
       activeDossierTab = tabNumber;
-      document.querySelectorAll(".analysis-tab-btn").forEach((btn, idx) => {
-        btn.classList.toggle("active", idx + 1 === tabNumber);
-      });
-      document.querySelectorAll(".analysis-tab-pane").forEach((pane, idx) => {
-        pane.classList.toggle("active", idx + 1 === tabNumber);
-      });
+      document.querySelectorAll(".analysis-tab-btn").forEach((btn, idx) => btn.classList.toggle("active", idx + 1 === tabNumber));
+      document.querySelectorAll(".analysis-tab-panel").forEach((pane, idx) => pane.classList.toggle("active", idx + 1 === tabNumber));
     }
 
-    function renderDossier() {
-      const p = window.CricXData.getPlayerById(activeDossierBatsmanId);
-      if (!p) return;
+    async function renderDossier() {
+      const sel = document.getElementById("dossierBatsmanSelect");
+      if (sel && sel.value) activeDossierBatsmanId = sel.value;
+      if (!activeDossierBatsmanId) return;
+      const name = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].textContent.split(" — ")[0] : "Batsman";
+      const mySeq = ++dossierSeq;
 
-      document.getElementById("dossierPlayerName").textContent = p.name;
-      document.getElementById("dossierPlayerMeta").textContent = `${p.country} · ${p.role} · ${p.battingHand}`;
-      document.getElementById("dossierCountryBadge").textContent = p.country.toUpperCase();
-      document.getElementById("dossierGradeBadge").textContent = (p.scoutGrade || 'S-Tier').split(" ")[0];
-
-      // Tab 1: Theory & Tips
-      const tips = p.theoryTips || {
-        trapName: "5th-Stump Channel Squeeze",
-        deliverySequence: "Bowl 2 outswingers in 5th-stump corridor, follow with rapid inswinging yorker at off stump base.",
-        phaseVulnerability: "Early Powerplay overs (Balls 1-15).",
-        technicalFlaw: "Pushes hands away from body without full forward stride.",
-        fieldInstruction: "Set Fourth-Stump Catchers (3 Slips + Gully + deep boundary rider)."
+      const recBody = {
+        batsman_id: activeDossierBatsmanId,
+        bowler_type: "pace_right_arm",
+        match: { innings: 1, over: 24, ball_in_over: 1, score: 150, wickets: 3 },
+        options: { top_k: 5 },
       };
 
-      document.getElementById("dossierTrapName").textContent = tips.trapName;
-      document.getElementById("dossierSequence").textContent = tips.deliverySequence;
-      document.getElementById("dossierPhaseVuln").textContent = tips.phaseVulnerability;
-      document.getElementById("dossierTechnicalFlaw").textContent = tips.technicalFlaw;
-      document.getElementById("dossierFieldInstruction").textContent = tips.fieldInstruction;
+      let profile, rec, grid;
+      try {
+        [profile, rec, grid] = await Promise.all([
+          fetch(`/v1/batsmen/${encodeURIComponent(activeDossierBatsmanId)}/profile`).then(r => r.ok ? r.json() : null),
+          postJson("/v1/recommendation", recBody),
+          postJson("/v1/grid", recBody),
+        ]);
+      } catch (e) { console.warn("dossier fetch failed:", e); return; }
+      if (mySeq !== dossierSeq || !profile) return;
 
-      // Tab 2: Visual Ground & Heatmap
-      renderDossierHeatmap(p);
-      renderMiniGround(tips.fieldInstruction);
+      const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+      const pct = o => Object.entries(o || {}).sort((a, b) => b[1] - a[1]);
 
-      // Tab 3: Machine Learning & SHAP
-      const ml = p.mlShapData || {
-        dismissalProb: 8.4,
-        confidence: "High (94.2%)",
-        features: [
-          { feature: "Length: Full / Good", impact: "+0.038", desc: "Forces false stroke outside off." },
-          { feature: "Line: 5th Stump Channel", impact: "+0.031", desc: "Generates outside edge." },
-          { feature: "Pitch: Highveld Hard Bounce", impact: "+0.024", desc: "Steep bounce beats the bat." }
-        ]
-      };
+      setTxt("dossierBatsmanHand", `${profile.balls_faced} balls faced`);
+      setTxt("dossierBatsmanGrade", profile.low_sample ? "Low sample" : `${profile.dismissals} dismissals`);
 
-      document.getElementById("dossierDismissalProb").textContent = ml.dismissalProb + "%";
-      document.getElementById("dossierConfidence").textContent = ml.confidence;
-      document.getElementById("dossierShapFeatures").innerHTML = ml.features.map(f => `
-        <div class="shap-row-item">
-          <div>
-            <b style="font-family:var(--font-mono); font-size:13px; color:var(--text-primary);">${f.feature}</b>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${f.desc}</div>
-          </div>
-          <span class="shap-delta-badge pos">${f.impact}</span>
-        </div>
-      `).join("");
+      const dmix = pct(profile.dismissal_type_pct);
+      const topDismissal = dmix[0] ? `${dmix[0][0].replace(/_/g, " ")} (${dmix[0][1]}%)` : "n/a";
+      setTxt("dossierTrapName", `Gets out most often: ${topDismissal}`);
+
+      setTxt("dossierDeliverySeq",
+        `Across ${profile.matches} ODIs since the 2023 World Cup: ${profile.balls_faced} balls, `
+        + `${profile.dismissals} dismissals. Batting average by phase ${profile.phase_average}; `
+        + `${profile.average_under_pressure} under chase pressure vs ${profile.average_normal} otherwise. `
+        + `Dismissal mix — ` + dmix.slice(0, 4).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}%`).join(", ") + ".");
+
+      setTxt("dossierPhaseVuln",
+        `Phase average ${profile.phase_average}. Under pressure (RRR high / wickets down) the average drops to `
+        + `${profile.average_under_pressure}, against ${profile.average_normal} in normal situations.`);
+
+      setTxt("dossierTechnicalFlaw",
+        "Length / line vulnerability can't be computed — the Cricsheet source has no ball-tracking data, "
+        + "so the model treats every delivery position as unknown. The figures above are the real signal.");
+
+      const top = rec.recommendations[0];
+      setTxt("dossierTargetLine",
+        `Model's flat pick for this situation: ${top.length}, ${top.line.replace(/_/g, " ")} `
+        + `(P(W) ${(top.dismissal_probability * 100).toFixed(1)}%, E[R] ${top.expected_runs.toFixed(2)}) — length/line not differentiated.`);
+      setTxt("dossierFieldDirective", top.field_label || top.field_preset || "Standard field");
+      setTxt("dossierPresetName", top.field_label || top.field_preset || "Standard field");
+
+      const cells = (grid.cells || []).map(c => ({ length: c.length, line: c.line, prob: +(c.dismissal_probability * 100).toFixed(1) }));
+      renderDossierHeatmap(cells, top.length, top.line);
+      renderMiniGround(top.field_label || "");
+
+      setTxt("mlDismissalProb", (top.dismissal_probability * 100).toFixed(1) + "%");
+      setTxt("mlExpectedRuns", top.expected_runs.toFixed(2));
+      setTxt("mlConfidenceTier", (top.confidence || "low").replace(/^./, c => c.toUpperCase()));
+
+      const shap = document.getElementById("dossierShapList");
+      if (shap) {
+        shap.innerHTML = (top.reasons || []).map(s => `
+          <div class="shap-row-item">
+            <div><b style="font-family:var(--font-mono); font-size:13px; color:var(--text-primary);">${s}</b></div>
+          </div>`).join("") || `<div class="shap-row-item"><div>No SHAP reasons returned.</div></div>`;
+      }
     }
 
-    function renderDossierHeatmap(player) {
+    function renderDossierHeatmap(cells, recLen, recLine) {
       const table = document.getElementById("dossierHeatmapTable");
       if (!table) return;
-
       const lengths = ["yorker", "full", "good", "short", "bouncer"];
       const lines = ["wide_outside_off", "outside_off", "off_stump", "middle_stump", "leg_stump", "down_leg", "wide_down_leg"];
       const lineShort = s => s.replace(/_/g, " ").replace("outside", "out").replace("wide out off", "wide off").replace("wide down leg", "wide leg");
       const ramp = ["#172620", "#2b3223", "#453823", "#623820", "#84371e", "#a8351c"];
-
+      const map = {};
+      cells.forEach(c => { map[c.length + "|" + c.line] = c.prob; });
+      const vals = cells.map(c => c.prob);
+      const lo = Math.min(...vals, 0), hi = Math.max(...vals, 1);
       let html = `<div></div>` + lines.map(l => `<div class="hm-col-header">${lineShort(l)}</div>`).join("");
       lengths.forEach(len => {
         html += `<div class="hm-row-label">${len}</div>`;
         lines.forEach(ln => {
-          const isRec = (len === "good" && ln === "outside_off") || (len === "yorker" && ln === "off_stump");
-          const val = isRec ? "8.4" : (Math.random() * 4 + 2).toFixed(1);
-          const bg = isRec ? "#00E676" : ramp[Math.floor(Math.random() * ramp.length)];
-          const textColor = isRec ? "#000" : "#ddd";
-          html += `
-            <div class="hm-cell ${isRec ? 'recommended' : ''}" style="background:${bg}; color:${textColor}; font-weight:${isRec ? '800' : '600'};">
-              ${val}%
-            </div>
-          `;
+          const v = map[len + "|" + ln];
+          if (v === undefined) { html += `<div class="hm-cell"></div>`; return; }
+          const isRec = len === recLen && ln === recLine;
+          const idx = hi > lo ? Math.min(5, Math.floor((v - lo) / (hi - lo) * 6)) : 0;
+          const bg = isRec ? "#00E676" : ramp[idx];
+          html += `<div class="hm-cell ${isRec ? 'recommended' : ''}" style="background:${bg}; color:${isRec ? '#000' : '#ddd'}; font-weight:${isRec ? '800' : '600'};" title="${len} ${ln}">${v.toFixed(1)}%</div>`;
         });
       });
       table.innerHTML = html;
     }
 
+
     function renderMiniGround(fieldInstruction) {
-      const container = document.getElementById("dossierMiniGroundSvg");
+      const container = document.getElementById("miniGroundSvg");
       if (!container) return;
       container.innerHTML = `
         <ellipse cx="140" cy="140" rx="125" ry="125" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" stroke-dasharray="4 4"/>

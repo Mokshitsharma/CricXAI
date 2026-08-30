@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 from pathlib import Path
 from typing import Any
@@ -54,3 +55,34 @@ def list_files(directory: PathLike, pattern: str = "*") -> list[Path]:
     if not root.exists():
         return []
     return sorted(path for path in root.glob(pattern) if path.is_file())
+
+
+def read_frame(stem: PathLike):
+    """Read ``<stem>.parquet`` if it exists, else ``<stem>.csv``.
+
+    Parquet is ~8x smaller and ~10x faster to load for the big processed
+    tables; the pipeline writes both so CSV-based tooling keeps working.
+    ``stem`` is the path without extension.
+    """
+    import pandas as pd
+
+    stem = Path(stem)
+    parquet = stem.with_suffix(".parquet")
+    if parquet.exists():
+        return pd.read_parquet(parquet)
+    return pd.read_csv(stem.with_suffix(".csv"))
+
+
+def write_frame(df, stem: PathLike) -> Path:
+    """Write a DataFrame as both ``<stem>.csv`` and ``<stem>.parquet``.
+
+    CSV stays the canonical, inspectable artifact; parquet is a load-time
+    optimisation and its failure is non-fatal. Returns the CSV path.
+    """
+    stem = Path(stem)
+    ensure_dir(stem.parent)
+    csv_path = stem.with_suffix(".csv")
+    df.to_csv(csv_path, index=False)
+    with contextlib.suppress(Exception):  # parquet is an optional optimisation
+        df.to_parquet(stem.with_suffix(".parquet"), index=False)
+    return csv_path

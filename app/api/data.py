@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from app.ml.features import BASE_FEATURES, historical_feature_columns
+from app.utils.file_io import read_frame
 from app.utils.logger import get_logger
 
 DEFAULT_PROCESSED_DIR = Path("data/processed")
@@ -36,9 +37,9 @@ class DataStore:
             or os.environ.get("CRICXAI_PROCESSED_DIR")
             or DEFAULT_PROCESSED_DIR
         )
-        self.deliveries = pd.read_csv(self.dir / "deliveries.csv")
-        self.matches = pd.read_csv(self.dir / "matches.csv")
-        self.features = pd.read_csv(self.dir / "delivery_features.csv")
+        self.deliveries = read_frame(self.dir / "deliveries")
+        self.matches = read_frame(self.dir / "matches")
+        self.features = read_frame(self.dir / "delivery_features")
         self.deliveries["is_wicket"] = self.deliveries["is_wicket"].astype(bool)
         self.features["is_wicket"] = self.features["is_wicket"].astype(bool)
 
@@ -380,18 +381,35 @@ class DataStore:
 
     # -- internals --------------------------------------------------------
     def _precompute_batsman_context(self) -> dict[str, dict]:
+        """Per-batsman feature means + ball/dismissal/match counts.
+
+        Two grouped passes (one over the feature table, one over deliveries)
+        rather than a per-batsman boolean scan — the latter is O(players x
+        rows) and dominates DataStore startup on a full-size dataset.
+        """
         feat_cols = [c for c in BASE_FEATURES if c in self.features.columns] + self._hist_cols
+        means_by_batsman = self.features.groupby("batsman")[feat_cols].mean(numeric_only=True)
+
+        d = self.deliveries
+        counts = (
+            d.assign(
+                _faced=d["outcome"].ne("wide").astype(int),
+                _wkt=d["is_wicket"].astype(int),
+            )
+            .groupby("batsman")
+            .agg(balls=("_faced", "sum"), dismissals=("_wkt", "sum"), matches=("match_id", "nunique"))
+        )
+
         out: dict[str, dict] = {}
-        grouped_feats = self.features.groupby("batsman")
-        deliv = self.deliveries
-        for name, g in grouped_feats:
-            means = g[feat_cols].mean(numeric_only=True).to_dict()
-            dg = deliv[deliv["batsman"] == name]
-            out[str(name)] = {
-                "features": {k: float(v) for k, v in means.items() if not np.isnan(v)},
-                "balls": int((dg["outcome"] != "wide").sum()),
-                "dismissals": int(dg["is_wicket"].sum()),
-                "matches": int(dg["match_id"].nunique()),
+        for name, mrow in means_by_batsman.iterrows():
+            key = str(name)
+            feats = {k: float(v) for k, v in mrow.items() if pd.notna(v)}
+            c = counts.loc[name] if name in counts.index else None
+            out[key] = {
+                "features": feats,
+                "balls": int(c["balls"]) if c is not None else 0,
+                "dismissals": int(c["dismissals"]) if c is not None else 0,
+                "matches": int(c["matches"]) if c is not None else 0,
             }
         return out
 

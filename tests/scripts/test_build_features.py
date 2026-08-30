@@ -109,6 +109,35 @@ def test_pressure_index_capped_at_ten():
     assert chase_row["pressure_index"] <= 10.0
 
 
+def test_pressure_index_floored_at_zero_for_a_cruising_chase():
+    # Innings 1 all out for 60 -> tiny target; the chase romps it so
+    # required_run_rate << current_run_rate and raw pressure goes negative.
+    deliveries = pd.DataFrame(
+        [
+            _row("M1", 1, 20, 6, "C", "Y", 60, "six"),
+            _row("M1", 2, 5, 1, "A", "X", 6, "six"),
+            _row("M1", 2, 5, 2, "A", "X", 6, "six"),
+        ]
+    )
+    features = build_features(deliveries)
+    chase = features[(features["match_id"] == "M1") & (features["innings"] == 2)]
+    assert (chase["pressure_index"] >= 0.0).all()
+
+
+def test_strike_rate_is_clipped():
+    from scripts.build_features import STRIKE_RATE_CAP
+
+    # 6 runs off the first ball -> raw rolling SR would be 600 on ball 2.
+    deliveries = pd.DataFrame(
+        [
+            _row("M1", 1, 0, 1, "A", "X", 6, "six"),
+            _row("M1", 1, 0, 2, "A", "X", 0, "dot"),
+        ]
+    )
+    features = build_features(deliveries)
+    assert features["batsman_strike_rate"].max() <= STRIKE_RATE_CAP
+
+
 def test_innings_one_has_zero_pressure_index():
     deliveries = pd.DataFrame(
         [

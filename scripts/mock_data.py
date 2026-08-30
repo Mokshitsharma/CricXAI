@@ -36,7 +36,7 @@ from app.utils.cricket_constants import (
     BALL_LINES,
     phase_from_over,
 )
-from app.utils.file_io import ensure_dir
+from app.utils.file_io import write_frame
 from app.utils.logger import get_logger
 
 DEFAULT_OUTPUT_DIR = Path("data/processed")
@@ -670,12 +670,9 @@ def main() -> int:
     logger = get_logger(__name__)
     deliveries, matches = generate(args.num_matches, args.seed, logger=logger)
 
-    ensure_dir(args.output_dir)
-    deliveries_path = args.output_dir / "deliveries.csv"
-    matches_path = args.output_dir / "matches.csv"
-    deliveries.to_csv(deliveries_path, index=False)
-    matches.to_csv(matches_path, index=False)
-    logger.info("Wrote %s and %s", deliveries_path, matches_path)
+    write_frame(deliveries, args.output_dir / "deliveries")
+    write_frame(matches, args.output_dir / "matches")
+    logger.info("Wrote deliveries + matches (.csv + .parquet) to %s", args.output_dir)
     return 0
 
 

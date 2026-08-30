@@ -25,8 +25,8 @@ type, expected runs, a field placement, and SHAP-based reasons.
 | Models M1 / M2 / M3 (LightGBM, grouped CV, SHAP) | ✅ trained on real data |
 | Candidate-grid recommendation engine | ✅ `app/engine/` |
 | FastAPI `/v1` service + single-file web console | ✅ `app/api/` |
-| Web console — Live Console / Player-vs-Player / Matchup & XI AI | ✅ wired to `/v1` |
-| Web console — Dossier / Rosters / Stadium | ⚠️ still on hardcoded demo data |
+| Web console — Console / PvP / Matchup&XI / Dossier | ✅ wired to `/v1` |
+| Web console — 10-Nation Rosters / Stadium Arena | ⚠️ still on hardcoded demo data |
 | Persistence (Postgres / Redis / object store) | ❌ Phase 3 |
 | Auth / API keys / billing | ❌ Phase 5 |
 | ESPNcricinfo scraper (`scripts/scraper.py`) | 🅿️ retained as the future path to real length/line, not in use |
@@ -51,9 +51,12 @@ pip install -r requirements.txt
 The Cricsheet archive is vendored at `data/external/cricsheet/odis_json.zip`.
 
 ```bash
-make real     # cricsheet_ingest -> build_features -> train   (~15 min, ~1.2 GB RAM)
-make api      # uvicorn on http://127.0.0.1:8000
+make real     # cricsheet_ingest -> build_features -> train   (~15 min, one-off)
+make api      # uvicorn on http://127.0.0.1:8000  (~15 s boot)
 ```
+
+The pipeline writes both `.csv` (canonical / inspectable) and `.parquet`
+(what the service loads — ~15× smaller, ~10× faster).
 
 Open **http://127.0.0.1:8000** for the web console; the OpenAPI schema is at
 `/v1/openapi.json`.
@@ -96,7 +99,7 @@ mock_data.py  (simulator, same schema) ────┘
                         eval.md, shap_background.parquet}  +  active.json pointer
                                                         │
    ┌────────────────────────── app/api  (FastAPI /v1) ──┴───────────────────┐
-   │  data.py     in-memory CSV store (batsmen, teams, H2H, squads)         │
+   │  data.py     in-memory store, parquet-backed (batsmen, teams, H2H, …)  │
    │  service.py  situation → pressure/phase → engine                        │
    │  engine/     candidate_grid → score M1/M3 → rank by phase objective →   │
    │              M2 dismissal-type + SHAP reasons + heuristic field         │
@@ -182,7 +185,8 @@ Single HTML file (`app/api/static/index.html` + `players_data.js`).
 | **Live Console** | `/v1/recommendation` + `/v1/grid` — real models & store |
 | **Player vs Player** | `/v1/matchup` (exact H2H) + recommendation for the picked bowler type |
 | **Matchup & XI AI** | `/v1/team/{team}/squad` + `/v1/team-matchup` — real aggregates & W/L |
-| Batsman Dossier, 10-Nation Rosters, Stadium Arena | hardcoded demo data in `players_data.js` — **not** model output |
+| **Batsman Dossier** | `/v1/batsmen/{id}/profile` + recommendation — real career splits & dismissal mix |
+| 10-Nation Rosters, Stadium Arena | hardcoded demo data in `players_data.js` — **not** model output |
 
 Player and team dropdowns default to post-2023-World-Cup players.
 
@@ -240,11 +244,11 @@ tests/       scripts / engine / models / api / leakage
 - **No bowler type in the data** — the console/PvP make the user pick it.
 - **Marginal model lift** — M1 beats base rate by ~2%, M3 by ~1.5%. Real
   volume didn't fix this; delivery-type features would.
-- **Server boot ~90 s / ~1.2 GB RAM** — the in-memory CSV store loads three
-  large files and precomputes per-player context; fine for local use, needs
-  work before a real deployment (Phase 3).
-- Three console tabs (Dossier / Rosters / Stadium) still render fabricated
-  scouting text and, in one case, a `Math.random()` heatmap.
+- **In-memory store** — the whole processed dataset is loaded into RAM at
+  boot (~15 s from parquet, ~1 GB). Fine for one instance; Phase 3 moves it
+  to a database.
+- Two console tabs (10-Nation Rosters, Stadium Arena) still render the
+  fabricated `players_data.js` scouting text — not model output.
 
 ---
 

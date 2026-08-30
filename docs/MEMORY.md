@@ -78,6 +78,21 @@ also works.
   the `trained_env` fixture trains its own tiny mock set in a temp dir; only
   `test_dismissal_prob_full_dataset_quality_if_present` reads the repo's
   active model (needs `roc_auc >= 0.65`).
+- **2026-08-30 — Processed tables are parquet-primary.** `build_features` /
+  `cricsheet_ingest` / `mock_data` write both `.csv` (canonical, inspectable)
+  and `.parquet` via `file_io.write_frame`; `data.py` and `train.py` load via
+  `file_io.read_frame` (parquet if present, else csv). Cut server boot from
+  ~90 s to ~15 s; `delivery_features` 451 MB → 30 MB. Both git-ignored.
+- **2026-08-30 — correctness fixes.** `pressure_index` is now clipped to
+  `[0, CAP]` for chasing rows in `build_features` (was only `min(_, CAP)` —
+  a cruising chase went to −34, and `service.compute_pressure_index` floors
+  at 0, so train/serve had skewed). `batsman_strike_rate` clipped to 400
+  (1-2-ball denominators spiked it into the thousands).
+- **2026-08-30 — web console fully real.** Live Console, Player-vs-Player,
+  Matchup & XI AI, and Batsman Dossier all call `/v1` now; the fabricated
+  `CricXPvP` / `CricXMatchup` engines (~600 lines) were deleted from
+  `players_data.js`. Only 10-Nation Rosters + Stadium Arena still use
+  `CricXData` / `PLAYERS_DATABASE`.
 
 ## 3. Gotchas / landmines
 
