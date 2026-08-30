@@ -32,6 +32,21 @@ def test_batsmen_list_and_profile(api_client):
     assert "ball_length_pct" in body
 
 
+def test_teams_and_filtered_player_list(api_client):
+    teams = api_client.get("/v1/teams").json()["teams"]
+    assert teams and isinstance(teams, list)
+
+    team = teams[0]
+    listed = api_client.get(f"/v1/batsmen?team={team}&since=2000-01-01&limit=50").json()["batsmen"]
+    assert listed
+    assert all(p["team"] == team for p in listed)
+    assert {"id", "name", "team", "balls", "dismissals"} <= set(listed[0])
+
+    # a future cutoff filters everyone out
+    empty = api_client.get("/v1/batsmen?since=2999-01-01").json()["batsmen"]
+    assert empty == []
+
+
 def test_unknown_batsman_profile_404(api_client):
     r = api_client.get("/v1/batsmen/player-nobody-here/profile")
     assert r.status_code == 404

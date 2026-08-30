@@ -42,6 +42,17 @@ class DataStore:
         self.deliveries["is_wicket"] = self.deliveries["is_wicket"].astype(bool)
         self.features["is_wicket"] = self.features["is_wicket"].astype(bool)
 
+        # Per-delivery match date (ISO string), for recency filters and the
+        # "most recent team" resolution below. Missing in the mock schema.
+        date_by_match = (
+            dict(zip(self.matches["match_id"].astype(str), self.matches["date"].astype(str), strict=False))
+            if "date" in self.matches.columns
+            else {}
+        )
+        self.deliveries["match_date"] = (
+            self.deliveries["match_id"].astype(str).map(date_by_match)
+        )
+
         self._hist_cols = historical_feature_columns(self.features)
         self._id_to_name: dict[str, str] = {}
         self._name_to_id: dict[str, str] = {}
@@ -52,9 +63,10 @@ class DataStore:
 
         self._batsman_ctx = self._precompute_batsman_context()
         self._feature_means = self._precompute_feature_means()
+        self._teams, self._player_team = self._precompute_player_directory()
         self.logger.info(
-            "DataStore ready: %s deliveries, %s matches, %s batsmen",
-            len(self.deliveries), len(self.matches), len(self._id_to_name),
+            "DataStore ready: %s deliveries, %s matches, %s batsmen, %s teams",
+            len(self.deliveries), len(self.matches), len(self._id_to_name), len(self._teams),
         )
 
     # -- identity ---------------------------------------------------------
@@ -87,6 +99,60 @@ class DataStore:
                 }
             )
         rows.sort(key=lambda r: r["balls"], reverse=True)
+        return rows[:limit]
+
+    def list_teams(self, since: str | None = None) -> list[str]:
+        """Distinct batting teams (empty for the mock schema). With ``since``
+        (ISO date), only teams that have batted on/after that date."""
+        if not since or "batting_team" not in self.deliveries.columns:
+            return list(self._teams)
+        d = self.deliveries
+        if not d["match_date"].notna().any():
+            return list(self._teams)
+        recent = d.loc[d["match_date"].fillna("") >= since, "batting_team"].dropna().unique()
+        return sorted(str(t) for t in recent)
+
+    def list_players(
+        self,
+        query: str | None = None,
+        team: str | None = None,
+        since: str | None = None,
+        limit: int = 200,
+    ) -> list[dict]:
+        """Every player who has *batted*, optionally filtered by team and by a
+        minimum match date (ISO ``YYYY-MM-DD``). ``balls`` / ``dismissals`` /
+        ``matches`` are counted within the ``since`` window; ``team`` is the
+        most recent team the player batted for (all-time)."""
+        d = self.deliveries
+        mask = d["batsman"].notna()
+        if since and d["match_date"].notna().any():
+            mask &= d["match_date"].fillna("") >= since
+        if team and "batting_team" in d.columns:
+            mask &= d["batting_team"] == team
+        sub = d.loc[mask, ["batsman", "match_id", "outcome", "is_wicket"]]
+        if sub.empty:
+            return []
+
+        faced = sub["outcome"].ne("wide")
+        grouped = sub.assign(_faced=faced.astype(int), _wkt=sub["is_wicket"].astype(int)).groupby("batsman")
+        agg = grouped.agg(balls=("_faced", "sum"), dismissals=("_wkt", "sum"), matches=("match_id", "nunique"))
+
+        rows = []
+        for name, r in agg.iterrows():
+            name = str(name)
+            if query and query.lower() not in name.lower():
+                continue
+            rows.append(
+                {
+                    "id": self.batsman_id(name),
+                    "name": name,
+                    "team": self._player_team.get(name) or None,
+                    "balls": int(r["balls"]),
+                    "dismissals": int(r["dismissals"]),
+                    "matches": int(r["matches"]),
+                }
+            )
+        rows.sort(key=lambda x: x["balls"], reverse=True)
         return rows[:limit]
 
     def batsman_feature_context(self, name: str) -> dict[str, float]:
@@ -168,6 +234,18 @@ class DataStore:
         cols = [c for c in BASE_FEATURES if c in self.features.columns] + self._hist_cols
         means = self.features[cols].mean(numeric_only=True)
         return {k: float(v) for k, v in means.items() if not np.isnan(v)}
+
+    def _precompute_player_directory(self) -> tuple[list[str], dict[str, str]]:
+        """(sorted team list, {player -> most recent team batted for})."""
+        d = self.deliveries
+        if "batting_team" not in d.columns:
+            return [], {}
+        teams = sorted(t for t in d["batting_team"].dropna().unique())
+        dd = d.dropna(subset=["batsman", "batting_team"])
+        if "match_date" in dd.columns and dd["match_date"].notna().any():
+            dd = dd.sort_values("match_date", kind="stable")
+        player_team = dd.groupby("batsman")["batting_team"].last()
+        return teams, {str(k): str(v) for k, v in player_team.items()}
 
 
 @lru_cache(maxsize=1)

@@ -1013,20 +1013,20 @@
             <span class="telemetry-pill" id="situationPhaseBadge">Phase: Death</span>
           </div>
 
-          <label class="input-label">
-            <span>Batsman to Bowl To</span>
-            <select class="select-control" id="consoleBatsmanSelect">
-              <option value="player-virat-kohli">Virat Kohli (23 outs)</option>
-              <option value="player-rohit-sharma">Rohit Sharma (21 outs)</option>
-              <option value="player-shubman-gill">Shubman Gill (14 outs)</option>
-              <option value="player-steve-smith">Steve Smith (19 outs)</option>
-              <option value="player-travis-head">Travis Head (15 outs)</option>
-              <option value="player-babar-azam">Babar Azam (18 outs)</option>
-              <option value="player-heinrich-klaasen">Heinrich Klaasen (12 outs)</option>
-              <option value="player-joe-root">Joe Root (16 outs)</option>
-              <option value="player-kane-williamson">Kane Williamson (17 outs)</option>
-            </select>
-          </label>
+          <div class="grid-2col">
+            <label class="input-label">
+              <span>Team</span>
+              <select class="select-control" id="consoleTeamSelect">
+                <option value="">All teams</option>
+              </select>
+            </label>
+            <label class="input-label">
+              <span>Player to Bowl To <span style="color:var(--text-muted);font-weight:400;">· post-2023 WC</span></span>
+              <select class="select-control" id="consoleBatsmanSelect">
+                <option value="">Loading…</option>
+              </select>
+            </label>
+          </div>
 
           <div class="input-label">
             <span>Bowler Type</span>
@@ -1995,25 +1995,45 @@
         }
       });
 
-      fetch("/v1/batsmen?limit=200")
-        .then(r => r.json())
-        .then(bl => {
-          if (bl && bl.batsmen && bl.batsmen.length > 0) {
-            const select = document.getElementById("consoleBatsmanSelect");
-            const prevVal = select.value;
-            select.innerHTML = bl.batsmen.map(b => `
-              <option value="${b.id}">${b.name} (${b.dismissals} outs)</option>
-            `).join("");
-            if (prevVal) select.value = prevVal;
-            else select.value = bl.batsmen[0].id;
-            
-            const badge = document.getElementById("navModelStatus");
-            if (badge) badge.textContent = `Active · ${bl.batsmen.length} Batsmen`;
-            fetchRecommendation();
+      const SINCE_WC2023 = "2023-11-20";
+      const teamSel = document.getElementById("consoleTeamSelect");
+      const playerSel = document.getElementById("consoleBatsmanSelect");
+
+      function loadPlayers(team) {
+        const url = `/v1/batsmen?since=${SINCE_WC2023}&limit=200`
+          + (team ? `&team=${encodeURIComponent(team)}` : "");
+        return fetch(url).then(r => r.json()).then(bl => {
+          const list = (bl && bl.batsmen) || [];
+          if (!list.length) {
+            playerSel.innerHTML = `<option value="">No players for this team</option>`;
+            return;
           }
+          const prevVal = playerSel.value;
+          playerSel.innerHTML = list.map(b =>
+            `<option value="${b.id}">${b.name} — ${b.balls} balls, ${b.dismissals} outs</option>`
+          ).join("");
+          if ([...playerSel.options].some(o => o.value === prevVal)) playerSel.value = prevVal;
+          else playerSel.value = list[0].id;
+          const badge = document.getElementById("navModelStatus");
+          if (badge) badge.textContent = `Active · ${list.length} players`;
+        });
+      }
+
+      fetch(`/v1/teams?since=${SINCE_WC2023}`)
+        .then(r => r.json())
+        .then(tj => {
+          const teams = (tj && tj.teams) || [];
+          if (teams.length) {
+            teamSel.innerHTML = `<option value="">All teams</option>`
+              + teams.map(t => `<option value="${t}">${t}</option>`).join("");
+            teamSel.value = teams.includes("India") ? "India" : teams[0];
+          }
+          teamSel.addEventListener("change", () => loadPlayers(teamSel.value).then(fetchRecommendation));
+          return loadPlayers(teamSel.value);
         })
+        .then(fetchRecommendation)
         .catch(e => {
-          console.warn("Using fallback batsman roster for console:", e);
+          console.warn("Console roster load failed, using fallback:", e);
           fetchRecommendation();
         });
     }
@@ -2032,8 +2052,8 @@
       const score = parseInt(document.getElementById("inputScore")?.value || 271, 10);
       const wickets = parseInt(document.getElementById("inputWickets")?.value || 6, 10);
       const target = parseInt(document.getElementById("inputTarget")?.value || 322, 10);
-      let batsman = document.getElementById("consoleBatsmanSelect")?.value;
-      if (!batsman) batsman = "player-virat-kohli";
+      const batsmanSel = document.getElementById("consoleBatsmanSelect");
+      let batsman = batsmanSel?.value || batsmanSel?.options?.[0]?.value || "";
 
       const match = {
         innings: currentInnings,

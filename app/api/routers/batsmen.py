@@ -14,13 +14,27 @@ def _store(request: Request):
     return store
 
 
+@router.get("/teams")
+def list_teams(
+    request: Request,
+    since: str | None = Query(default=None, description="only teams active on/after this ISO date"),
+) -> dict:
+    return {"teams": _store(request).list_teams(since=since)}
+
+
 @router.get("/batsmen")
 def list_batsmen(
     request: Request,
     q: str | None = Query(default=None, description="name substring"),
+    team: str | None = Query(default=None, description="filter to one batting team"),
+    since: str | None = Query(
+        default=None, description="min match date, ISO YYYY-MM-DD (recency filter)"
+    ),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> dict:
     store = _store(request)
+    if team or since:
+        return {"batsmen": store.list_players(query=q, team=team, since=since, limit=limit)}
     return {"batsmen": store.list_batsmen(query=q, limit=limit)}
 
 
