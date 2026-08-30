@@ -32,6 +32,44 @@ def test_batsmen_list_and_profile(api_client):
     assert "ball_length_pct" in body
 
 
+def test_teams_and_filtered_player_list(api_client):
+    teams = api_client.get("/v1/teams").json()["teams"]
+    assert teams and isinstance(teams, list)
+
+    team = teams[0]
+    listed = api_client.get(f"/v1/batsmen?team={team}&since=2000-01-01&limit=50").json()["batsmen"]
+    assert listed
+    assert all(p["team"] == team for p in listed)
+    assert {"id", "name", "team", "balls", "dismissals"} <= set(listed[0])
+
+    # a future cutoff filters everyone out
+    empty = api_client.get("/v1/batsmen?since=2999-01-01").json()["batsmen"]
+    assert empty == []
+
+
+def test_bowler_list_head_to_head_and_team_squad(api_client):
+    teams = api_client.get("/v1/teams?since=2000-01-01").json()["teams"]
+    assert teams
+    team = teams[0]
+
+    bowlers = api_client.get(f"/v1/batsmen?team={team}&since=2000-01-01&role=bowler").json()["batsmen"]
+    assert bowlers and "wickets" in bowlers[0]
+
+    bats = api_client.get(f"/v1/batsmen?team={team}&since=2000-01-01").json()["batsmen"]
+    h2h = api_client.get(
+        f"/v1/matchup?batsman={bats[0]['id']}&bowler={bowlers[0]['id']}"
+    ).json()
+    assert {"balls", "runs", "dismissals", "strike_rate", "dismissal_breakdown"} <= set(h2h)
+
+    squad = api_client.get(f"/v1/team/{team}/squad?since=2000-01-01").json()["players"]
+    assert squad
+    assert {"id", "name", "role", "rating", "batting", "bowling"} <= set(squad[0])
+    assert squad[0]["rating"] >= squad[-1]["rating"]  # sorted by rating desc
+
+    tm = api_client.get(f"/v1/team-matchup?a={teams[0]}&b={teams[-1]}").json()
+    assert {"played", "team_a_wins", "team_b_wins", "team_a_win_pct"} <= set(tm)
+
+
 def test_unknown_batsman_profile_404(api_client):
     r = api_client.get("/v1/batsmen/player-nobody-here/profile")
     assert r.status_code == 404

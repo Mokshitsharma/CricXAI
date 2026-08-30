@@ -22,13 +22,15 @@ Last updated: 2026-08-28
 | Deployment | Docker + compose + CI + deploy config in `deploy/` |
 | Postgres / Redis / object storage | Specified, not wired (Phase 3) |
 | Auth / billing | Specified, not built (Phase 5) |
-| Real scraped data | Not yet — `TOURNAMENTS` series IDs still `None` |
+| Real ESPN scraped data | Not pursued — `TOURNAMENTS` series IDs still `None` |
+| Real Cricsheet data | Ingested (Phase 2) — `scripts/cricsheet_ingest.py`, 2,569 male ODIs / 1.36M deliveries, `source="cricsheet"`. **No length/line/shot** in the source (`"unknown"`). |
 
 Run the whole mock slice: `make demo` (or the commands in
 [APP_FLOW.md](APP_FLOW.md) §1).
 
-Python: use **`py -3.13`** — the global 3.13 has pandas/sklearn/lightgbm/
-shap/fastapi. The repo `venv/` (3.13) lacks lightgbm/shap.
+Python: `venv/` now has lightgbm 4.7 + shap 0.52 installed (was missing
+them); `pip install -r requirements.txt` covers everything. Global 3.13
+also works.
 
 ## 2. Decision log
 
@@ -56,6 +58,26 @@ shap/fastapi. The repo `venv/` (3.13) lacks lightgbm/shap.
 - **2026-08-28 — CSV-backed data access layer now, Postgres later.**
   `app/api/data.py` loads CSVs into memory at boot behind an interface that
   a DB implementation will replace in Phase 3.
+- **2026-08-30 — Real data source is Cricsheet, not ESPN scraping
+  (supersedes ADR-003's "mock until scraping").** Cricsheet publishes
+  ball-by-ball ODI JSON under ODC-BY (attribution, derivatives OK) — no
+  403s, no scraping fragility, defensible licence. `scripts/cricsheet_ingest.py`
+  reads `data/external/cricsheet/odis_json.zip` and writes the parser's
+  schema directly (`source="cricsheet"`). ESPN `scraper.py`/`nlp_parser.py`
+  kept only as the future path to real length/line.
+- **2026-08-30 — Cricsheet has NO ball length / line / shot type.** They
+  ingest as `"unknown"`. Consequence: M1/M3 lose all length×line signal, so
+  the candidate-grid recommender (M4) returns near-flat scores across cells
+  on Cricsheet-only models. The dismissal-risk / dismissal-type / expected-
+  runs numbers are real; the *prescribe length & line* headline needs either
+  a labelled heuristic layer or a separate real length/line feed (Phase 4 /
+  open question). Afghanistan men's matches are withheld by Cricsheet.
+- **2026-08-30 — `train.py` `source` label.** With Cricsheet rows the
+  repo's `data/models/` artifacts are tagged `data_source="mixed/real"`
+  (the code only special-cases an all-`mock` frame). Tests are unaffected —
+  the `trained_env` fixture trains its own tiny mock set in a temp dir; only
+  `test_dismissal_prob_full_dataset_quality_if_present` reads the repo's
+  active model (needs `roc_auc >= 0.65`).
 
 ## 3. Gotchas / landmines
 

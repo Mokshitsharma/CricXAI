@@ -667,7 +667,7 @@
         <div class="strength-radar-grid">
           <!-- Pace Attack -->
           <div class="strength-metric-item">
-            <div class="strength-metric-title">Pace &amp; Bounce Threat</div>
+            <div class="strength-metric-title" id="meterTitle1">Top-order batting avg</div>
             <div class="strength-metric-numbers">
               <span style="color:var(--accent-green);" id="mPaceA">96</span>
               <span style="color:var(--text-muted);">vs</span>
@@ -681,7 +681,7 @@
 
           <!-- Spin Penetration -->
           <div class="strength-metric-item">
-            <div class="strength-metric-title">Spin Penetration (Ov 11-40)</div>
+            <div class="strength-metric-title" id="meterTitle2">Top-order strike rate</div>
             <div class="strength-metric-numbers">
               <span style="color:var(--accent-green);" id="mSpinA">92</span>
               <span style="color:var(--text-muted);">vs</span>
@@ -695,7 +695,7 @@
 
           <!-- Batting Depth -->
           <div class="strength-metric-item">
-            <div class="strength-metric-title">Batting Depth (1-7)</div>
+            <div class="strength-metric-title" id="meterTitle3">Attack — wickets / innings</div>
             <div class="strength-metric-numbers">
               <span style="color:var(--accent-green);" id="mBatA">95</span>
               <span style="color:var(--text-muted);">vs</span>
@@ -709,7 +709,7 @@
 
           <!-- Death Overs Power -->
           <div class="strength-metric-item">
-            <div class="strength-metric-title">Death Overs Execution</div>
+            <div class="strength-metric-title" id="meterTitle4">Attack — economy (lower better)</div>
             <div class="strength-metric-numbers">
               <span style="color:var(--accent-green);" id="mDeathA">94</span>
               <span style="color:var(--text-muted);">vs</span>
@@ -836,6 +836,13 @@
               <select class="matchup-select-large" id="duelCountryBowlSel" onchange="onDuelCountryBowlChange()"></select>
               <select class="matchup-select-large" id="duelBowlerSel" onchange="renderDuelPrescription()"></select>
             </div>
+            <select class="matchup-select-large" id="duelBowlerTypeSel" onchange="renderDuelPrescription()" style="margin-top:8px;">
+              <option value="pace_right_arm">Pace — right arm</option>
+              <option value="pace_left_arm">Pace — left arm</option>
+              <option value="off_spin">Off-spin</option>
+              <option value="leg_spin">Leg-spin</option>
+              <option value="left_arm_spin">Left-arm spin</option>
+            </select>
           </div>
         </div>
 
@@ -1013,20 +1020,20 @@
             <span class="telemetry-pill" id="situationPhaseBadge">Phase: Death</span>
           </div>
 
-          <label class="input-label">
-            <span>Batsman to Bowl To</span>
-            <select class="select-control" id="consoleBatsmanSelect">
-              <option value="player-virat-kohli">Virat Kohli (23 outs)</option>
-              <option value="player-rohit-sharma">Rohit Sharma (21 outs)</option>
-              <option value="player-shubman-gill">Shubman Gill (14 outs)</option>
-              <option value="player-steve-smith">Steve Smith (19 outs)</option>
-              <option value="player-travis-head">Travis Head (15 outs)</option>
-              <option value="player-babar-azam">Babar Azam (18 outs)</option>
-              <option value="player-heinrich-klaasen">Heinrich Klaasen (12 outs)</option>
-              <option value="player-joe-root">Joe Root (16 outs)</option>
-              <option value="player-kane-williamson">Kane Williamson (17 outs)</option>
-            </select>
-          </label>
+          <div class="grid-2col">
+            <label class="input-label">
+              <span>Team</span>
+              <select class="select-control" id="consoleTeamSelect">
+                <option value="">All teams</option>
+              </select>
+            </label>
+            <label class="input-label">
+              <span>Player to Bowl To <span style="color:var(--text-muted);font-weight:400;">· post-2023 WC</span></span>
+              <select class="select-control" id="consoleBatsmanSelect">
+                <option value="">Loading…</option>
+              </select>
+            </label>
+          </div>
 
           <div class="input-label">
             <span>Bowler Type</span>
@@ -1531,133 +1538,129 @@
     // ==========================================
     // MATCHUP & AI PLAYING XI LOGIC
     // ==========================================
+    const MATCHUP_SINCE = "2023-11-20";
     let currentMatchupTeamA = "India";
     let currentMatchupTeamB = "Australia";
     let currentPitchCondition = "highveld_bounce";
-    let activePlayingXIA = [];
-    let activeBenchA = [];
-    let activePlayingXIB = [];
-    let activeBenchB = [];
+    let squadA = [], squadB = [], teamH2H = null;
+    let activePlayingXIA = [], activeBenchA = [], activePlayingXIB = [], activeBenchB = [];
+    let matchupSeq = 0;
+
+    function pickXI(squad) {
+      const bats = squad.filter(p => p.role === "batter" || p.role === "allrounder");
+      const bowls = squad.filter(p => p.role === "bowler" || p.role === "allrounder");
+      const xi = [], seen = new Set();
+      const take = (arr, n) => { for (const p of arr) { if (xi.length >= 11 || seen.has(p.id)) continue; if (n-- <= 0) break; xi.push(p); seen.add(p.id); } };
+      take(bats, 6); take(bowls, 5); take(squad, 11);
+      return { playingXI: xi, bench: squad.filter(p => !seen.has(p.id)).slice(0, 5) };
+    }
+
+    function teamStrength(xi) {
+      const avg = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0;
+      const bats = xi.filter(p => p.batting.balls >= 60).sort((a, b) => b.rating - a.rating).slice(0, 6);
+      const bowls = xi.filter(p => p.bowling.balls >= 60).sort((a, b) => b.rating - a.rating).slice(0, 4);
+      const batAvg = avg(bats.map(p => p.batting.avg));
+      const batSR = avg(bats.map(p => p.batting.sr));
+      const wktsPerInns = avg(bowls.map(p => p.bowling.balls ? p.bowling.wickets / p.bowling.balls * 300 : 0));
+      const econ = avg(bowls.map(p => p.bowling.econ).filter(x => x > 0)) || 6.0;
+      const overall = 0.4 * Math.min(100, batAvg * 1.8) + 0.2 * Math.min(100, batSR * 0.9)
+        + 0.25 * Math.min(100, wktsPerInns * 11) + 0.15 * Math.min(100, Math.max(0, (7.5 - econ) * 30));
+      return { batAvg: +batAvg.toFixed(1), batSR: +batSR.toFixed(1), wktsPerInns: +wktsPerInns.toFixed(2), econ: +econ.toFixed(2), overall };
+    }
 
     function initMatchupControls() {
       const selA = document.getElementById("matchupTeamASelect");
       const selB = document.getElementById("matchupTeamBSelect");
-      if (!selA || !selB || !window.CricXData) return;
-
-      const countries = window.CricXData.getEligibleCountries();
-      const opts = countries.map(c => `<option value="${c.id}">${c.flag} ${c.name}</option>`).join("");
-      selA.innerHTML = opts;
-      selB.innerHTML = opts;
-
-      selA.value = currentMatchupTeamA;
-      selB.value = currentMatchupTeamB;
-
-      onMatchupTeamsChange();
+      if (!selA || !selB) return;
+      fetch(`/v1/teams?since=${MATCHUP_SINCE}`).then(r => r.json()).then(tj => {
+        const teams = (tj && tj.teams) || [];
+        const opts = teams.map(t => `<option value="${t}">${t}</option>`).join("");
+        selA.innerHTML = opts; selB.innerHTML = opts;
+        selA.value = teams.includes("India") ? "India" : teams[0];
+        selB.value = teams.includes("Australia") ? "Australia" : (teams[1] || teams[0]);
+        onMatchupTeamsChange();
+      });
     }
 
-    function onMatchupTeamsChange() {
+    async function onMatchupTeamsChange() {
       const selA = document.getElementById("matchupTeamASelect");
       const selB = document.getElementById("matchupTeamBSelect");
       if (selA) currentMatchupTeamA = selA.value;
       if (selB) currentMatchupTeamB = selB.value;
-
-      if (!window.CricXMatchup) return;
-
-      // Predict Strongest XI for Team A
-      const predA = window.CricXMatchup.predictStrongestXI(currentMatchupTeamA, currentMatchupTeamB, currentPitchCondition);
-      activePlayingXIA = predA.playingXI;
-      activeBenchA = predA.bench;
-
-      // Predict Strongest XI for Team B
-      const predB = window.CricXMatchup.predictStrongestXI(currentMatchupTeamB, currentMatchupTeamA, currentPitchCondition);
-      activePlayingXIB = predB.playingXI;
-      activeBenchB = predB.bench;
-
-      renderMatchupArena();
+      const mySeq = ++matchupSeq;
+      try {
+        const [sqA, sqB, h2h] = await Promise.all([
+          fetch(`/v1/team/${encodeURIComponent(currentMatchupTeamA)}/squad?since=${MATCHUP_SINCE}`).then(r => r.json()),
+          fetch(`/v1/team/${encodeURIComponent(currentMatchupTeamB)}/squad?since=${MATCHUP_SINCE}`).then(r => r.json()),
+          fetch(`/v1/team-matchup?a=${encodeURIComponent(currentMatchupTeamA)}&b=${encodeURIComponent(currentMatchupTeamB)}`).then(r => r.json()),
+        ]);
+        if (mySeq !== matchupSeq) return;
+        squadA = sqA.players || []; squadB = sqB.players || []; teamH2H = h2h;
+        const pa = pickXI(squadA), pb = pickXI(squadB);
+        activePlayingXIA = pa.playingXI; activeBenchA = pa.bench;
+        activePlayingXIB = pb.playingXI; activeBenchB = pb.bench;
+        renderMatchupArena();
+      } catch (e) { console.warn("matchup load failed:", e); }
     }
 
     function setMatchupCondition(cond) {
       currentPitchCondition = cond;
       document.querySelectorAll("#page-matchup .condition-pill-btn").forEach(b => b.classList.remove("active"));
-      if (cond === "highveld_bounce") document.getElementById("cond-highveld")?.classList.add("active");
-      if (cond === "coastal_swing") document.getElementById("cond-coastal")?.classList.add("active");
-      if (cond === "inland_spin") document.getElementById("cond-inland")?.classList.add("active");
-
-      const labels = {
-        "highveld_bounce": "Highveld Steep Bounce (Wanderers/Centurion)",
-        "coastal_swing": "Coastal Powerplay Swing (Kingsmead/Newlands)",
-        "inland_spin": "Inland Dry Spin Squeeze (Paarl/Bloemfontein)"
-      };
+      document.getElementById("cond-" + cond.replace(/_.*/, ""))?.classList.add("active");
       const lbl = document.getElementById("battleConditionLabel");
-      if (lbl) lbl.textContent = labels[cond] || cond;
-
-      onMatchupTeamsChange();
+      if (lbl) lbl.textContent = "Pitch profile is illustrative — not modelled from data";
     }
 
     function renderMatchupArena() {
-      if (!window.CricXMatchup || !window.CricXData) return;
+      const theme = t => (window.CricXData && CricXData.getJerseyTheme) ? CricXData.getJerseyTheme(t) : {};
+      const themeA = theme(currentMatchupTeamA), themeB = theme(currentMatchupTeamB);
+      const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+      setTxt("battleFlagA", "\U0001F3CF"); setTxt("battleNameA", currentMatchupTeamA);
+      setTxt("colFlagA", ""); setTxt("colTitleA", currentMatchupTeamA + " XI");
+      setTxt("battleFlagB", "\U0001F3CF"); setTxt("battleNameB", currentMatchupTeamB);
+      setTxt("colFlagB", ""); setTxt("colTitleB", currentMatchupTeamB + " XI");
 
-      const countries = window.CricXData.getEligibleCountries();
-      const cA = countries.find(c => c.id === currentMatchupTeamA) || { flag: "🏏", name: currentMatchupTeamA };
-      const cB = countries.find(c => c.id === currentMatchupTeamB) || { flag: "🏏", name: currentMatchupTeamB };
+      const sA = teamStrength(activePlayingXIA), sB = teamStrength(activePlayingXIB);
+      const strengthProbA = 100 / (1 + Math.exp(-0.06 * (sA.overall - sB.overall)));
+      let winA = (teamH2H && (teamH2H.team_a_wins + teamH2H.team_b_wins) >= 3)
+        ? 0.55 * teamH2H.team_a_win_pct + 0.45 * strengthProbA
+        : strengthProbA;
+      winA = Math.max(15, Math.min(85, winA));
+      const winB = 100 - winA;
 
-      document.getElementById("battleFlagA").textContent = cA.flag;
-      document.getElementById("battleNameA").textContent = cA.name;
-      document.getElementById("colFlagA").textContent = cA.flag;
-      document.getElementById("colTitleA").textContent = cA.name + " Playing XI";
+      const winElA = document.getElementById("battleWinPctA"), winElB = document.getElementById("battleWinPctB");
+      if (winElA) { winElA.textContent = winA.toFixed(1) + "%"; winElA.style.color = themeA.text || themeA.primary || "#00E676"; }
+      if (winElB) { winElB.textContent = winB.toFixed(1) + "%"; winElB.style.color = themeB.text || themeB.primary || "#38BDF8"; }
+      const barA = document.getElementById("battleBarA"), barB = document.getElementById("battleBarB");
+      if (barA) { barA.style.width = winA + "%"; if (themeA.gradient) barA.style.background = themeA.gradient; }
+      if (barB) { barB.style.width = winB + "%"; if (themeB.gradient) barB.style.background = themeB.gradient; }
 
-      document.getElementById("battleFlagB").textContent = cB.flag;
-      document.getElementById("battleNameB").textContent = cB.name;
-      document.getElementById("colFlagB").textContent = cB.flag;
-      document.getElementById("colTitleB").textContent = cB.name + " Playing XI";
+      const advEl = document.getElementById("battleAdvantageText");
+      if (advEl) {
+        const rec = teamH2H && teamH2H.played
+          ? ` \u00b7 H2H record: ${teamH2H.team_a_wins}\u2013${teamH2H.team_b_wins} in ${teamH2H.played}` : " \u00b7 no recorded H2H";
+        advEl.textContent = (winA >= 50
+          ? `${currentMatchupTeamA} favoured (+${(winA - winB).toFixed(1)}%)`
+          : `${currentMatchupTeamB} favoured (+${(winB - winA).toFixed(1)}%)`) + rec;
+      }
 
-      const themeA = window.CricXData.getJerseyTheme(currentMatchupTeamA);
-      const themeB = window.CricXData.getJerseyTheme(currentMatchupTeamB);
-
-      const matchup = window.CricXMatchup.calculateMatchupWinProb(activePlayingXIA, activePlayingXIB, currentPitchCondition);
-      const winElA = document.getElementById("battleWinPctA");
-      const winElB = document.getElementById("battleWinPctB");
-      winElA.textContent = matchup.winProbA.toFixed(1) + "%";
-      winElB.textContent = matchup.winProbB.toFixed(1) + "%";
-
-      winElA.style.color = themeA.text || themeA.primary;
-      winElA.style.textShadow = `0 0 25px ${themeA.glow}`;
-      winElB.style.color = themeB.text || themeB.primary;
-      winElB.style.textShadow = `0 0 25px ${themeB.glow}`;
-
-      const barA = document.getElementById("battleBarA");
-      const barB = document.getElementById("battleBarB");
-      barA.style.width = matchup.winProbA + "%";
-      barA.style.background = themeA.gradient;
-      barA.style.boxShadow = `0 0 16px ${themeA.glow}`;
-
-      barB.style.width = matchup.winProbB + "%";
-      barB.style.background = themeB.gradient;
-      barB.style.boxShadow = `0 0 16px ${themeB.glow}`;
-
-      const adv = matchup.winProbA >= 50 ? `${cA.name} Favored (+${(matchup.winProbA - matchup.winProbB).toFixed(1)}%)` : `${cB.name} Favored (+${(matchup.winProbB - matchup.winProbA).toFixed(1)}%)`;
-      document.getElementById("battleAdvantageText").textContent = adv;
-
-      const stA = matchup.strengthsA;
-      const stB = matchup.strengthsB;
-
-      const setMeter = (idValA, idValB, idBarA, idBarB, valA, valB) => {
-        const elA = document.getElementById(idValA);
-        const elB = document.getElementById(idValB);
-        if (elA) { elA.textContent = valA; elA.style.color = themeA.text || themeA.primary; }
-        if (elB) { elB.textContent = valB; elB.style.color = themeB.text || themeB.primary; }
-
-        const tot = (valA + valB) || 1;
-        const bA = document.getElementById(idBarA);
-        const bB = document.getElementById(idBarB);
-        if (bA) { bA.style.width = ((valA / tot) * 100) + "%"; bA.style.background = themeA.primary; }
-        if (bB) { bB.style.width = ((valB / tot) * 100) + "%"; bB.style.background = themeB.primary; }
+      const setMeter = (idA, idB, bA, bB, vA, vB, dp) => {
+        dp = dp || 1;
+        const eA = document.getElementById(idA), eB = document.getElementById(idB);
+        if (eA) { eA.textContent = vA.toFixed(dp); eA.style.color = themeA.text || themeA.primary || "#00E676"; }
+        if (eB) { eB.textContent = vB.toFixed(dp); eB.style.color = themeB.text || themeB.primary || "#38BDF8"; }
+        const tot = (vA + vB) || 1;
+        const fA = document.getElementById(bA), fB = document.getElementById(bB);
+        if (fA) fA.style.width = (vA / tot * 100) + "%";
+        if (fB) fB.style.width = (vB / tot * 100) + "%";
       };
-
-      setMeter("mPaceA", "mPaceB", "mBarPaceA", "mBarPaceB", stA.paceStrength, stB.paceStrength);
-      setMeter("mSpinA", "mSpinB", "mBarSpinA", "mBarSpinB", stA.spinStrength, stB.spinStrength);
-      setMeter("mBatA", "mBatB", "mBarBatA", "mBarBatB", stA.battingDepth, stB.battingDepth);
-      setMeter("mDeathA", "mDeathB", "mBarDeathA", "mBarDeathB", stA.deathPower, stB.deathPower);
+      setMeter("mPaceA", "mPaceB", "mBarPaceA", "mBarPaceB", sA.batAvg, sB.batAvg);
+      setMeter("mSpinA", "mSpinB", "mBarSpinA", "mBarSpinB", sA.batSR, sB.batSR);
+      setMeter("mBatA", "mBatB", "mBarBatA", "mBarBatB", sA.wktsPerInns, sB.wktsPerInns, 2);
+      setMeter("mDeathA", "mDeathB", "mBarDeathA", "mBarDeathB", (10 - sA.econ), (10 - sB.econ), 2);
+      const d1 = document.getElementById("mDeathA"), d2 = document.getElementById("mDeathB");
+      if (d1) d1.textContent = sA.econ.toFixed(2);
+      if (d2) d2.textContent = sB.econ.toFixed(2);
 
       renderRosterColumn("rosterStackA", activePlayingXIA, themeA);
       renderRosterColumn("rosterStackB", activePlayingXIB, themeB);
@@ -1665,95 +1668,69 @@
     }
 
     function renderRosterColumn(containerId, players, theme) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-
-      container.innerHTML = players.map((p, idx) => {
-        let statsHtml = "";
-        if (p.stats) {
-          if (p.stats.type === "batsman") {
-            statsHtml = `<span>Runs: <b>${p.stats.runs.toLocaleString()}</b></span> &middot; <span>Avg: <b>${p.stats.avg}</b></span> &middot; <span>SR: <b>${p.stats.sr}</b></span>`;
-          } else if (p.stats.type === "bowler") {
-            statsHtml = `<span>Wickets: <b>${p.stats.wickets}</b></span> &middot; <span>Avg: <b>${p.stats.avg}</b></span> &middot; <span>Econ: <b>${p.stats.econ}</b></span>`;
-          } else {
-            statsHtml = `<span>Runs: <b>${p.stats.runs}</b></span> &middot; <span>Wkts: <b>${p.stats.wickets}</b></span> &middot; <span>Avg: <b>${p.stats.bat_avg}</b></span>`;
-          }
-        }
-
-        let tierClass = "s-tier";
-        if (p.scoutGrade && p.scoutGrade.includes("A-Tier")) tierClass = "a-tier";
-        else if (p.scoutGrade && p.scoutGrade.includes("B-Tier")) tierClass = "b-tier";
-
+      const c = document.getElementById(containerId);
+      if (!c) return;
+      c.innerHTML = players.map((p, i) => {
+        const b = p.batting, w = p.bowling;
+        const stat = (p.role === "bowler")
+          ? `Wkts <b>${w.wickets}</b> \u00b7 Econ <b>${w.econ}</b> \u00b7 Avg <b>${w.avg}</b>`
+          : (p.role === "allrounder")
+            ? `Bat <b>${b.avg}</b> @${b.sr} \u00b7 Wkts <b>${w.wickets}</b> @${w.econ}`
+            : `Runs <b>${b.runs}</b> \u00b7 Avg <b>${b.avg}</b> \u00b7 SR <b>${b.sr}</b>`;
         return `
-          <div class="matchup-player-row" style="border-left: 3px solid ${theme.primary};">
-            <div class="player-avatar-wrap" style="border: 2px solid ${theme.primary}; box-shadow: 0 0 10px ${theme.glow};">
-              <img src="${p.photo || ''}" alt="${p.name}">
-            </div>
-
+          <div class="matchup-player-row" style="border-left:3px solid ${theme.primary || '#00E676'};">
             <div class="player-matchup-meta">
               <div class="player-name-line">
-                <span class="player-m-name">${idx + 1}. ${p.name}</span>
-                <span class="player-age-badge" style="background:${theme.badgeBg}; border:1px solid ${theme.badgeBorder}; color:${theme.text};">Age ${p.age || 28}</span>
-                <span class="scout-grade-badge ${tierClass}" style="font-size:9px; padding:1px 6px;">${(p.scoutGrade || 'S-Tier').split(' ')[0]}</span>
+                <span class="player-m-name">${i + 1}. ${p.name}</span>
+                <span class="player-age-badge" style="background:${theme.badgeBg || 'rgba(0,230,118,0.12)'}; border:1px solid ${theme.badgeBorder || 'rgba(0,230,118,0.3)'}; color:${theme.text || '#00E676'};">${p.rating.toFixed(0)}</span>
+                <span class="scout-grade-badge" style="font-size:9px; padding:1px 6px;">${p.role}</span>
               </div>
-              <div class="player-m-role">${p.role} &middot; ${p.battingHand}</div>
-              <div class="player-stats-pill" style="color:${theme.text};">${statsHtml}</div>
+              <div class="player-stats-pill" style="color:${theme.text || 'var(--text-secondary)'};">${stat}</div>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join("");
     }
 
     function renderShapSwaps() {
       const grid = document.getElementById("swapRecCardsGrid");
-      if (!grid || !window.CricXMatchup) return;
-
-      const recs = window.CricXMatchup.getShapSwapRecommendations(
-        currentMatchupTeamA,
-        activePlayingXIA,
-        activePlayingXIB,
-        activeBenchA,
-        currentPitchCondition
-      );
-
-      if (!recs || recs.length === 0) {
-        grid.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">Current Playing XI is tactically optimal for this matchup.</div>`;
+      if (!grid) return;
+      const recs = [];
+      for (const cand of activeBenchA) {
+        const worst = [...activePlayingXIA]
+          .filter(p => p.role === cand.role || cand.role === "allrounder" || p.role === "allrounder")
+          .sort((a, b) => a.rating - b.rating)[0];
+        if (worst && cand.rating - worst.rating > 3) recs.push({ inP: cand, outP: worst, delta: +(cand.rating - worst.rating).toFixed(1) });
+      }
+      recs.sort((a, b) => b.delta - a.delta);
+      if (!recs.length) {
+        grid.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">Selected XI is already the top 11 by rating for ${currentMatchupTeamA}.</div>`;
         return;
       }
-
-      grid.innerHTML = recs.map(r => `
+      grid.innerHTML = recs.slice(0, 4).map(r => `
         <div class="swap-rec-card">
           <div>
             <div class="swap-action-title">
               <div>
-                <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); display:block;">Recommend Swap:</span>
-                <span class="swap-in-name">＋ IN: ${r.playerIn.name}</span>
-                <span class="swap-out-name" style="margin-left:8px;">－ OUT: ${r.playerOut.name}</span>
+                <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); display:block;">Rating-based swap</span>
+                <span class="swap-in-name">\uFF0B IN: ${r.inP.name} (${r.inP.rating.toFixed(0)})</span>
+                <span class="swap-out-name" style="margin-left:8px;">\uFF0D OUT: ${r.outP.name} (${r.outP.rating.toFixed(0)})</span>
               </div>
-              <span class="swap-delta-pill ${r.deltaWinProb < 0 ? 'neg' : ''}" style="${r.deltaWinProb < 0 ? 'color:var(--accent-danger); background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.3);' : ''}">
-                ${r.deltaText}
-              </span>
+              <span class="swap-delta-pill">+${r.delta} rating</span>
             </div>
             <p class="swap-tactical-reason" style="margin-top:8px;">
-              ${r.reason}
+              ${r.inP.name}: ${r.inP.role === 'bowler' ? `${r.inP.bowling.wickets} wkts @ econ ${r.inP.bowling.econ}` : `bat avg ${r.inP.batting.avg} @ SR ${r.inP.batting.sr}`} since the 2023 World Cup \u2014 ahead of ${r.outP.name} on the composite rating.
             </p>
           </div>
-
-          <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="applyShapSwap('${r.playerIn.id}', '${r.playerOut.id}')">
-            Apply Swap &rarr;
-          </button>
-        </div>
-      `).join("");
+          <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="applyShapSwap('${r.inP.id}','${r.outP.id}')">Apply Swap &rarr;</button>
+        </div>`).join("");
     }
 
     function applyShapSwap(playerInId, playerOutId) {
       const inIdx = activeBenchA.findIndex(p => p.id === playerInId);
       const outIdx = activePlayingXIA.findIndex(p => p.id === playerOutId);
       if (inIdx !== -1 && outIdx !== -1) {
-        const pIn = activeBenchA[inIdx];
-        const pOut = activePlayingXIA[outIdx];
-        activePlayingXIA[outIdx] = pIn;
-        activeBenchA[inIdx] = pOut;
+        const pIn = activeBenchA[inIdx], pOut = activePlayingXIA[outIdx];
+        activePlayingXIA[outIdx] = pIn; activeBenchA[inIdx] = pOut;
         renderMatchupArena();
       }
     }
@@ -1761,68 +1738,81 @@
     // ==========================================
     // BATSMAN VS BOWLER DISMISSAL PRESCRIPTOR
     // ==========================================
-    let duelCountryBat = "India";
-    let duelBatsmanId = "player-virat-kohli";
-    let duelCountryBowl = "Australia";
-    let duelBowlerId = "player-mitchell-starc";
-    let duelCondition = "highveld_bounce";
+    // Real data: Cricsheet ODI ball-by-ball via /v1/*. Head-to-head is exact
+    // historical record; the "optimal ball" comes from the M1/M3 grid for the
+    // chosen bowler type (length/line is flat until we have delivery-type data).
+    const DUEL_SINCE = "2023-11-20";
+    let duelBatId = "";
+    let duelBowlName = "";
+    let duelBowlerType = "pace_right_arm";
     let duelPhase = "middle";
+    const DUEL_PHASE_SITUATION = {
+      powerplay: { over: 4, score: 35, wickets: 1 },
+      middle:    { over: 24, score: 150, wickets: 3 },
+      death:     { over: 46, score: 290, wickets: 6 },
+    };
+    let duelSeq = 0;
 
     function initPvPControls() {
       const cBatSel = document.getElementById("duelCountryBatSel");
       const cBowlSel = document.getElementById("duelCountryBowlSel");
-      if (!cBatSel || !cBowlSel || !window.CricXData) return;
+      const btSel = document.getElementById("duelBowlerTypeSel");
+      if (!cBatSel || !cBowlSel) return;
+      if (btSel) btSel.value = duelBowlerType;
+      if (btSel && !btSel._wired) { btSel.addEventListener("change", () => { duelBowlerType = btSel.value; renderDuelPrescription(); }); btSel._wired = true; }
 
-      const countries = window.CricXData.getEligibleCountries();
-      const opts = countries.map(c => `<option value="${c.id}">${c.flag} ${c.name}</option>`).join("");
-      cBatSel.innerHTML = opts;
-      cBowlSel.innerHTML = opts;
+      fetch(`/v1/teams?since=${DUEL_SINCE}`)
+        .then(r => r.json())
+        .then(tj => {
+          const teams = (tj && tj.teams) || [];
+          const opts = teams.map(t => `<option value="${t}">${t}</option>`).join("");
+          cBatSel.innerHTML = opts;
+          cBowlSel.innerHTML = opts;
+          cBatSel.value = teams.includes("India") ? "India" : teams[0];
+          cBowlSel.value = teams.includes("Australia") ? "Australia" : (teams[1] || teams[0]);
+          return Promise.all([loadDuelBatters(cBatSel.value), loadDuelBowlers(cBowlSel.value)]);
+        })
+        .then(renderDuelPrescription)
+        .catch(e => console.warn("PvP init failed:", e));
+    }
 
-      cBatSel.value = duelCountryBat;
-      cBowlSel.value = duelCountryBowl;
+    function loadDuelBatters(team) {
+      const sel = document.getElementById("duelBatsmanSel");
+      return fetch(`/v1/batsmen?team=${encodeURIComponent(team)}&since=${DUEL_SINCE}&limit=200`)
+        .then(r => r.json()).then(j => {
+          const list = (j && j.batsmen) || [];
+          sel.innerHTML = list.length
+            ? list.map(p => `<option value="${p.id}">${p.name} — ${p.balls}b, ${p.dismissals} out</option>`).join("")
+            : `<option value="">No players</option>`;
+          if (list[0]) { duelBatId = list[0].id; sel.value = duelBatId; }
+        });
+    }
 
-      onDuelCountryBatChange();
-      onDuelCountryBowlChange();
+    function loadDuelBowlers(team) {
+      const sel = document.getElementById("duelBowlerSel");
+      return fetch(`/v1/batsmen?team=${encodeURIComponent(team)}&since=${DUEL_SINCE}&role=bowler&limit=200`)
+        .then(r => r.json()).then(j => {
+          const list = (j && j.batsmen) || [];
+          sel.innerHTML = list.length
+            ? list.map(p => `<option value="${p.id}" data-name="${p.name}">${p.name} — ${p.balls}b, ${p.wickets} wkts</option>`).join("")
+            : `<option value="">No bowlers</option>`;
+          if (list[0]) { duelBowlName = list[0].name; sel.value = list[0].id; }
+        });
     }
 
     function onDuelCountryBatChange() {
-      duelCountryBat = document.getElementById("duelCountryBatSel").value;
-      const batSel = document.getElementById("duelBatsmanSel");
-      const squad = window.CricXData.getPlayersByCountry(duelCountryBat);
-      const bats = squad.filter(p => p.type === "batsman" || p.type === "allrounder");
-      const list = bats.length > 0 ? bats : squad;
-
-      batSel.innerHTML = list.map(p => `<option value="${p.id}">${p.name} (${p.battingHand})</option>`).join("");
-      if (list[0]) {
-        duelBatsmanId = list[0].id;
-        batSel.value = duelBatsmanId;
-      }
-      renderDuelPrescription();
+      loadDuelBatters(document.getElementById("duelCountryBatSel").value).then(renderDuelPrescription);
     }
-
     function onDuelCountryBowlChange() {
-      duelCountryBowl = document.getElementById("duelCountryBowlSel").value;
-      const bowlSel = document.getElementById("duelBowlerSel");
-      const squad = window.CricXData.getPlayersByCountry(duelCountryBowl);
-      const bowlers = squad.filter(p => p.type === "bowler" || p.type === "allrounder");
-      const list = bowlers.length > 0 ? bowlers : squad;
-
-      bowlSel.innerHTML = list.map(p => `<option value="${p.id}">${p.name} (${p.role})</option>`).join("");
-      if (list[0]) {
-        duelBowlerId = list[0].id;
-        bowlSel.value = duelBowlerId;
-      }
-      renderDuelPrescription();
+      loadDuelBowlers(document.getElementById("duelCountryBowlSel").value).then(renderDuelPrescription);
     }
 
     function setDuelCondition(cond) {
-      duelCondition = cond;
       document.querySelectorAll("#page-pvp .condition-pill-btn").forEach(b => {
         if (b.id && b.id.startsWith("duel-cond-")) b.classList.remove("active");
       });
       const el = document.getElementById("duel-cond-" + cond.replace("_bounce", "").replace("_swing", "").replace("_spin", "").replace("_deck", ""));
       if (el) el.classList.add("active");
-      renderDuelPrescription();
     }
 
     function setDuelPhase(phase) {
@@ -1835,84 +1825,106 @@
       renderDuelPrescription();
     }
 
-    function renderDuelPrescription() {
-      if (!window.CricXPvP || !window.CricXPvP.prescribeDismissalBall) return;
-
+    async function renderDuelPrescription() {
       const batSel = document.getElementById("duelBatsmanSel");
       const bowlSel = document.getElementById("duelBowlerSel");
-      if (batSel && batSel.value) duelBatsmanId = batSel.value;
-      if (bowlSel && bowlSel.value) duelBowlerId = bowlSel.value;
+      if (batSel && batSel.value) duelBatId = batSel.value;
+      if (bowlSel && bowlSel.selectedOptions[0]) duelBowlName = bowlSel.selectedOptions[0].dataset.name || duelBowlName;
+      if (!duelBatId || !duelBowlName) return;
 
-      const res = window.CricXPvP.prescribeDismissalBall(duelBatsmanId, duelBowlerId, duelCondition, duelPhase);
-      if (!res) return;
+      const batName = batSel && batSel.selectedOptions[0] ? batSel.selectedOptions[0].textContent.split(" — ")[0] : "Batsman";
+      const sit = DUEL_PHASE_SITUATION[duelPhase] || DUEL_PHASE_SITUATION.middle;
+      const body = {
+        batsman_id: duelBatId,
+        bowler_type: duelBowlerType,
+        match: { innings: 1, over: sit.over, ball_in_over: 1, score: sit.score, wickets: sit.wickets },
+        options: { top_k: 3 },
+      };
+      const mySeq = ++duelSeq;
 
-      const bat = res.batsman;
-      const bowl = res.bowler;
-      const thBat = res.themeBat;
-      const thBowl = res.themeBowl;
+      let h2h, rec, grid;
+      try {
+        [h2h, rec, grid] = await Promise.all([
+          fetch(`/v1/matchup?batsman=${encodeURIComponent(duelBatId)}&bowler=${encodeURIComponent(duelBowlName)}`).then(r => r.ok ? r.json() : null),
+          postJson("/v1/recommendation", body),
+          postJson("/v1/grid", body),
+        ]);
+      } catch (err) {
+        console.warn("PvP fetch failed:", err);
+        return;
+      }
+      if (mySeq !== duelSeq) return;
+
+      const thBowl = (window.CricXData && CricXData.getJerseyTheme)
+        ? CricXData.getJerseyTheme(document.getElementById("duelCountryBowlSel").value) : {};
+      const thBat = (window.CricXData && CricXData.getJerseyTheme)
+        ? CricXData.getJerseyTheme(document.getElementById("duelCountryBatSel").value) : {};
+      const accent = thBowl.primary || "#00E676";
 
       const bBat = document.getElementById("duelBadgeBat");
-      if (bBat) {
-        bBat.textContent = bat.country.toUpperCase();
-        bBat.style.background = thBat.badgeBg;
-        bBat.style.borderColor = thBat.badgeBorder;
-        bBat.style.color = thBat.text;
-      }
-
+      if (bBat) { bBat.textContent = (document.getElementById("duelCountryBatSel").value || "").toUpperCase(); if (thBat.badgeBg) { bBat.style.background = thBat.badgeBg; bBat.style.borderColor = thBat.badgeBorder; bBat.style.color = thBat.text; } }
       const bBowl = document.getElementById("duelBadgeBowl");
-      if (bBowl) {
-        bBowl.textContent = bowl.country.toUpperCase();
-        bBowl.style.background = thBowl.badgeBg;
-        bBowl.style.borderColor = thBowl.badgeBorder;
-        bBowl.style.color = thBowl.text;
-      }
-
+      if (bBowl) { bBowl.textContent = (document.getElementById("duelCountryBowlSel").value || "").toUpperCase(); if (thBowl.badgeBg) { bBowl.style.background = thBowl.badgeBg; bBowl.style.borderColor = thBowl.badgeBorder; bBowl.style.color = thBowl.text; } }
       const pBox = document.getElementById("duelPrescriptionBox");
-      if (pBox) {
-        pBox.style.border = `1.5px solid ${thBowl.primary}`;
-        pBox.style.boxShadow = `0 16px 40px rgba(0,0,0,0.7), 0 0 30px ${thBowl.glow}`;
-      }
+      if (pBox && thBowl.glow) { pBox.style.border = `1.5px solid ${accent}`; pBox.style.boxShadow = `0 16px 40px rgba(0,0,0,0.7), 0 0 30px ${thBowl.glow}`; }
 
-      document.getElementById("duelDeliveryTitle").textContent = res.deliveryTitle;
-      document.getElementById("duelSeamSpeed").textContent = res.seamSpeed;
-      document.getElementById("duelProbVal").textContent = res.probPct + "%";
-      document.getElementById("duelProbVal").style.color = thBowl.text || thBowl.primary;
-      document.getElementById("duelExpRunsVal").textContent = res.expRuns.toFixed(1);
-      document.getElementById("duelDismissalMode").textContent = res.dismissalMode;
-      document.getElementById("duelFieldPreset").textContent = res.fieldPreset.replace(/_/g, " ").toUpperCase();
+      const top = rec.recommendations[0];
+      const distTop = Object.entries(top.dismissal_type_distribution || {}).sort((a, b) => b[1] - a[1]).slice(0, 2)
+        .map(([k, v]) => `${k.replace(/_/g, " ")} ${Math.round(v * 100)}%`).join(" · ");
+
+      document.getElementById("duelDeliveryTitle").textContent =
+        `${top.length[0].toUpperCase() + top.length.slice(1)}, ${top.line.replace(/_/g, " ")}`;
+
+      const eyebrow = document.querySelector("#duelPrescriptionBox .delivery-eyebrow");
+      if (eyebrow) eyebrow.lastChild.textContent = " OPTIMAL DISMISSAL BALL · M1/M3 ON REAL ODI DATA · " + duelPhase.toUpperCase() + " OVERS";
+
+      const seam = document.getElementById("duelSeamSpeed");
+      if (seam) seam.textContent = h2h && h2h.balls
+        ? `Head-to-head: ${h2h.balls} balls · ${h2h.runs} runs @ SR ${h2h.strike_rate} · out ${h2h.dismissals}× · ${h2h.matches} matches`
+        : "No recorded head-to-head between these two in the data";
+
+      document.getElementById("duelProbVal").textContent = (top.dismissal_probability * 100).toFixed(1) + "%";
+      document.getElementById("duelProbVal").style.color = accent;
+      document.getElementById("duelExpRunsVal").textContent = top.expected_runs.toFixed(1);
+      document.getElementById("duelDismissalMode").textContent = distTop || top.dismissal_type_top || "—";
+      document.getElementById("duelFieldPreset").textContent = (top.field_label || top.field_preset || "").toUpperCase();
 
       const seqGrid = document.getElementById("duelSetupSequenceGrid");
       if (seqGrid) {
-        seqGrid.innerHTML = res.setupSequence.map((step, i) => `
-          <div class="sequence-ball-step ${i === 2 ? 'final' : ''}" style="${i === 2 ? 'border-color:' + thBowl.primary + ';' : ''}">
-            <div class="seq-ball-num" style="${i === 2 ? 'color:' + thBowl.text + ';' : ''}">${step.ballNum}</div>
-            <div class="seq-ball-title">${step.lengthLine}</div>
-            <div class="seq-ball-intent">${step.intent}</div>
+        seqGrid.innerHTML = rec.recommendations.map((step, i) => `
+          <div class="sequence-ball-step ${i === rec.recommendations.length - 1 ? 'final' : ''}" style="${i === 0 ? 'border-color:' + accent + ';' : ''}">
+            <div class="seq-ball-num" style="${i === 0 ? 'color:' + accent + ';' : ''}">#${step.rank}</div>
+            <div class="seq-ball-title">${step.label}</div>
+            <div class="seq-ball-intent">P(W) ${(step.dismissal_probability * 100).toFixed(1)}% · E[R] ${step.expected_runs.toFixed(2)}</div>
           </div>
         `).join("");
       }
 
-      renderDuelHeatmap(res.gridCells, res.recommendedLength, res.recommendedLine, thBowl);
+      const cells = (grid.cells || []).map(c => ({ length: c.length, line: c.line, prob: +(c.dismissal_probability * 100).toFixed(1) }));
+      renderDuelHeatmap(cells, top.length, top.line, { primary: accent, glow: thBowl.glow || "rgba(0,230,118,0.4)" });
 
-      document.getElementById("lblBatVuln").textContent = `${bat.name}'s Documented Vulnerability:`;
-      document.getElementById("duelBatVulnText").textContent = bat.vulnerability;
-      document.getElementById("lblBowlWeapon").textContent = `${bowl.name}'s Spearhead Weapon:`;
-      document.getElementById("duelBowlWeaponText").textContent = `${bowl.primaryStrength} (${bowl.bowlingStyle.replace(/_/g, ' ')})`;
-      document.getElementById("duelPitchImpactText").textContent = res.pitchModifierText;
+      const brk = h2h && h2h.dismissal_breakdown
+        ? Object.entries(h2h.dismissal_breakdown).map(([k, v]) => `${v}× ${k.replace(/_/g, " ")}`).join(", ") : "";
+      document.getElementById("lblBatVuln").textContent = `${batName} vs ${duelBowlName} — historical:`;
+      document.getElementById("duelBatVulnText").textContent = h2h && h2h.balls
+        ? `${h2h.balls} balls faced, ${h2h.runs} runs at strike rate ${h2h.strike_rate}, dot-ball ${h2h.dot_pct}%, boundary ${h2h.boundary_pct}%. Dismissed ${h2h.dismissals} time(s)${brk ? " (" + brk + ")" : ""} across ${h2h.matches} matches (${(h2h.first_seen || "").slice(0, 4)}–${(h2h.last_seen || "").slice(0, 4)}).`
+        : "These two have not met in the Cricsheet ODI data (Afghanistan men's matches are withheld by the source).";
+
+      document.getElementById("lblBowlWeapon").textContent = `Model dismissal split (${duelBowlerType.replace(/_/g, " ")}):`;
+      document.getElementById("duelBowlWeaponText").textContent =
+        Object.entries(top.dismissal_type_distribution || {}).sort((a, b) => b[1] - a[1])
+          .map(([k, v]) => `${k.replace(/_/g, " ")} ${Math.round(v * 100)}%`).join(" · ");
+
+      document.getElementById("duelPitchImpactText").textContent =
+        "Length × line is not differentiated: Cricsheet has no ball-tracking, so every cell scores near-equal. The batsman-history, phase and dismissal-type signal is real.";
 
       const shapList = document.getElementById("duelShapList");
       if (shapList) {
-        shapList.innerHTML = res.shapAttributions.map(s => `
+        shapList.innerHTML = (top.reasons || []).map(s => `
           <div class="shap-row-item">
-            <div>
-              <b style="font-family:var(--font-mono); font-size:13px; color:var(--text-primary);">${s.feature}</b>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${s.desc}</div>
-            </div>
-            <span class="shap-delta-badge pos" style="background:${thBowl.badgeBg}; border:1px solid ${thBowl.badgeBorder}; color:${thBowl.text};">
-              ${s.impact}
-            </span>
+            <div><b style="font-family:var(--font-mono); font-size:13px; color:var(--text-primary);">${s}</b></div>
           </div>
-        `).join("");
+        `).join("") || `<div class="shap-row-item"><div>No SHAP reasons returned for this delivery.</div></div>`;
       }
     }
 
@@ -1995,25 +2007,45 @@
         }
       });
 
-      fetch("/v1/batsmen?limit=200")
-        .then(r => r.json())
-        .then(bl => {
-          if (bl && bl.batsmen && bl.batsmen.length > 0) {
-            const select = document.getElementById("consoleBatsmanSelect");
-            const prevVal = select.value;
-            select.innerHTML = bl.batsmen.map(b => `
-              <option value="${b.id}">${b.name} (${b.dismissals} outs)</option>
-            `).join("");
-            if (prevVal) select.value = prevVal;
-            else select.value = bl.batsmen[0].id;
-            
-            const badge = document.getElementById("navModelStatus");
-            if (badge) badge.textContent = `Active · ${bl.batsmen.length} Batsmen`;
-            fetchRecommendation();
+      const SINCE_WC2023 = "2023-11-20";
+      const teamSel = document.getElementById("consoleTeamSelect");
+      const playerSel = document.getElementById("consoleBatsmanSelect");
+
+      function loadPlayers(team) {
+        const url = `/v1/batsmen?since=${SINCE_WC2023}&limit=200`
+          + (team ? `&team=${encodeURIComponent(team)}` : "");
+        return fetch(url).then(r => r.json()).then(bl => {
+          const list = (bl && bl.batsmen) || [];
+          if (!list.length) {
+            playerSel.innerHTML = `<option value="">No players for this team</option>`;
+            return;
           }
+          const prevVal = playerSel.value;
+          playerSel.innerHTML = list.map(b =>
+            `<option value="${b.id}">${b.name} — ${b.balls} balls, ${b.dismissals} outs</option>`
+          ).join("");
+          if ([...playerSel.options].some(o => o.value === prevVal)) playerSel.value = prevVal;
+          else playerSel.value = list[0].id;
+          const badge = document.getElementById("navModelStatus");
+          if (badge) badge.textContent = `Active · ${list.length} players`;
+        });
+      }
+
+      fetch(`/v1/teams?since=${SINCE_WC2023}`)
+        .then(r => r.json())
+        .then(tj => {
+          const teams = (tj && tj.teams) || [];
+          if (teams.length) {
+            teamSel.innerHTML = `<option value="">All teams</option>`
+              + teams.map(t => `<option value="${t}">${t}</option>`).join("");
+            teamSel.value = teams.includes("India") ? "India" : teams[0];
+          }
+          teamSel.addEventListener("change", () => loadPlayers(teamSel.value).then(fetchRecommendation));
+          return loadPlayers(teamSel.value);
         })
+        .then(fetchRecommendation)
         .catch(e => {
-          console.warn("Using fallback batsman roster for console:", e);
+          console.warn("Console roster load failed, using fallback:", e);
           fetchRecommendation();
         });
     }
@@ -2032,8 +2064,8 @@
       const score = parseInt(document.getElementById("inputScore")?.value || 271, 10);
       const wickets = parseInt(document.getElementById("inputWickets")?.value || 6, 10);
       const target = parseInt(document.getElementById("inputTarget")?.value || 322, 10);
-      let batsman = document.getElementById("consoleBatsmanSelect")?.value;
-      if (!batsman) batsman = "player-virat-kohli";
+      const batsmanSel = document.getElementById("consoleBatsmanSelect");
+      let batsman = batsmanSel?.value || batsmanSel?.options?.[0]?.value || "";
 
       const match = {
         innings: currentInnings,
@@ -2063,6 +2095,10 @@
         ]);
 
         if (mySeq !== seq) return;
+        if (rec.situation && body.match.target && body.match.innings === 2) {
+          const oversLeft = Math.max(0.1, 50 - (body.match.over + (body.match.ball_in_over - 1) / 6));
+          rec.situation.required_run_rate = Math.max(0, (body.match.target - body.match.score) / oversLeft);
+        }
         renderRecommendation(rec);
         renderConsoleHeatmap(grid, rec.recommendations[0]);
       } catch (err) {
@@ -2152,26 +2188,30 @@
       let expRuns = isDeath ? 0.9 : (isPP ? 1.1 : 1.2);
       let fieldLabel = isDeath ? "Death Yorker Ring" : (isPP ? "Powerplay Slip Cordon" : "Standard 5-4 Field");
 
+      const m = body.match;
+      const rrr = (m.target && m.innings === 2)
+        ? Math.max(0, (m.target - m.score) / Math.max(0.1, 50 - (m.over + (m.ball_in_over - 1) / 6)))
+        : null;
       renderRecommendation({
         situation: {
           phase: isDeath ? "death" : (isPP ? "powerplay" : "middle"),
-          pressure_index: (body.match.wickets * 0.9 + 2.5).toFixed(1),
-          required_run_rate: 7.85
+          pressure_index: (m.wickets * 0.9 + 2.5).toFixed(1),
+          required_run_rate: rrr
         },
         recommendations: [
           {
             rank: 1,
-            label: topLabel,
+            label: topLabel + "  (offline estimate)",
             length: isDeath ? "yorker" : (isPP ? "full" : "good"),
             line: isDeath ? "off_stump" : "outside_off",
             dismissal_probability: prob,
             expected_runs: expRuns,
-            confidence: "high",
+            confidence: "low",
             field_label: fieldLabel,
             reasons: [
-              `Historical phase vulnerability: batsman edges higher outside off in ${isDeath ? "death" : "early"} overs.`,
-              `Bowler type (${body.bowler_type.replace(/_/g, " ")}) produces high dot-ball pressure on this trajectory.`,
-              `Required run-rate forces high-risk aggressive strokeplay.`
+              "API unavailable — showing a static phase-based estimate, not model output.",
+              `Bowler type: ${body.bowler_type.replace(/_/g, " ")}; phase: ${isDeath ? "death" : (isPP ? "powerplay" : "middle")}.`,
+              "Reconnect to /v1 for the real M1/M3 recommendation."
             ]
           },
           {

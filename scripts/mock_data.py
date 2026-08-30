@@ -467,6 +467,7 @@ def simulate_innings(
     bowling_squad: list[Player],
     cards: dict[str, PlayerCard],
     target: int | None,
+    batting_team: str = "",
 ) -> tuple[list[dict], int, int]:
     order = _batting_order(batting_squad)
     bowl_options = _bowling_options(bowling_squad)
@@ -511,7 +512,7 @@ def simulate_innings(
                 score += 1
                 ball_in_over += 1
                 rows.append(_row(match_id, innings, over, ball_in_over, striker, bowler,
-                                 1, length, line, "glance", "wide", False, None, None))
+                                 1, length, line, "glance", "wide", False, None, None, batting_team))
                 continue
 
             legal_balls += 1
@@ -537,7 +538,7 @@ def simulate_innings(
                 score += runs
                 shot = _shot_type(rng, length, line, "wicket")
                 rows.append(_row(match_id, innings, over, ball_in_over, striker, bowler,
-                                 runs, length, line, shot, "wicket", True, dtype, striker))
+                                 runs, length, line, shot, "wicket", True, dtype, striker, batting_team))
                 if next_batter_idx < len(order):
                     striker_idx = next_batter_idx
                     next_batter_idx += 1
@@ -554,7 +555,7 @@ def simulate_innings(
             outcome = {0: "dot", 1: "single", 2: "two", 3: "three", 4: "four", 6: "six"}[runs]
             shot = _shot_type(rng, length, line, outcome)
             rows.append(_row(match_id, innings, over, ball_in_over, striker, bowler,
-                             runs, length, line, shot, outcome, False, None, None))
+                             runs, length, line, shot, outcome, False, None, None, batting_team))
 
             if runs % 2 == 1:
                 striker_idx, non_striker_idx = non_striker_idx, striker_idx
@@ -568,7 +569,8 @@ def simulate_innings(
 
 
 def _row(match_id, innings, over, ball_in_over, batsman, bowler, total_runs,
-         ball_length, ball_line, shot_type, outcome, is_wicket, dismissal_type, player_out) -> dict:
+         ball_length, ball_line, shot_type, outcome, is_wicket, dismissal_type, player_out,
+         batting_team="") -> dict:
     return {
         "match_id": match_id,
         "innings": innings,
@@ -585,6 +587,7 @@ def _row(match_id, innings, over, ball_in_over, batsman, bowler, total_runs,
         "is_wicket": is_wicket,
         "dismissal_type": dismissal_type,
         "player_out": player_out,
+        "batting_team": batting_team,
         "source": "mock",
     }
 
@@ -598,8 +601,12 @@ def simulate_match(
         team_a, team_b = team_b, team_a
     squad_a, squad_b = SQUADS[team_a], SQUADS[team_b]
 
-    rows1, score1, wk1 = simulate_innings(rng, match_id, 1, squad_a, squad_b, cards, target=None)
-    rows2, score2, wk2 = simulate_innings(rng, match_id, 2, squad_b, squad_a, cards, target=score1 + 1)
+    rows1, score1, wk1 = simulate_innings(
+        rng, match_id, 1, squad_a, squad_b, cards, target=None, batting_team=team_a
+    )
+    rows2, score2, wk2 = simulate_innings(
+        rng, match_id, 2, squad_b, squad_a, cards, target=score1 + 1, batting_team=team_b
+    )
     rows = rows1 + rows2
 
     if score2 >= score1 + 1:
