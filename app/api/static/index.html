@@ -1568,10 +1568,13 @@
       return { batAvg: +batAvg.toFixed(1), batSR: +batSR.toFixed(1), wktsPerInns: +wktsPerInns.toFixed(2), econ: +econ.toFixed(2), overall };
     }
 
+    let matchupInitialized = false;
     function initMatchupControls() {
+      if (matchupInitialized) { renderMatchupArena(); return; }
       const selA = document.getElementById("matchupTeamASelect");
       const selB = document.getElementById("matchupTeamBSelect");
       if (!selA || !selB) return;
+      matchupInitialized = true;
       fetch(`/v1/teams?since=${MATCHUP_SINCE}`).then(r => r.json()).then(tj => {
         const teams = (tj && tj.teams) || [];
         const opts = teams.map(t => `<option value="${t}">${t}</option>`).join("");
@@ -1615,10 +1618,10 @@
       const theme = t => (window.CricXData && CricXData.getJerseyTheme) ? CricXData.getJerseyTheme(t) : {};
       const themeA = theme(currentMatchupTeamA), themeB = theme(currentMatchupTeamB);
       const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-      setTxt("battleFlagA", "\U0001F3CF"); setTxt("battleNameA", currentMatchupTeamA);
-      setTxt("colFlagA", ""); setTxt("colTitleA", currentMatchupTeamA + " XI");
-      setTxt("battleFlagB", "\U0001F3CF"); setTxt("battleNameB", currentMatchupTeamB);
-      setTxt("colFlagB", ""); setTxt("colTitleB", currentMatchupTeamB + " XI");
+      setTxt("battleNameA", currentMatchupTeamA);
+      setTxt("colFlagA", "🏏"); setTxt("colTitleA", currentMatchupTeamA + " XI");
+      setTxt("battleNameB", currentMatchupTeamB);
+      setTxt("colFlagB", "🏏"); setTxt("colTitleB", currentMatchupTeamB + " XI");
 
       const sA = teamStrength(activePlayingXIA), sB = teamStrength(activePlayingXIB);
       const strengthProbA = 100 / (1 + Math.exp(-0.06 * (sA.overall - sB.overall)));
@@ -1753,11 +1756,14 @@
     };
     let duelSeq = 0;
 
+    let pvpInitialized = false;
     function initPvPControls() {
+      if (pvpInitialized) { renderDuelPrescription(); return; }
       const cBatSel = document.getElementById("duelCountryBatSel");
       const cBowlSel = document.getElementById("duelCountryBowlSel");
       const btSel = document.getElementById("duelBowlerTypeSel");
       if (!cBatSel || !cBowlSel) return;
+      pvpInitialized = true;
       if (btSel) btSel.value = duelBowlerType;
       if (btSel && !btSel._wired) { btSel.addEventListener("change", () => { duelBowlerType = btSel.value; renderDuelPrescription(); }); btSel._wired = true; }
 
