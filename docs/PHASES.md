@@ -56,22 +56,41 @@ Deliverables:
 
 ## Phase 2 — Real data ingestion
 
-**Goal:** replace mock with scraped ODI data for a first real tournament.
+**Goal:** replace mock with real ball-by-ball ODI data.
 
-Deliverables: series IDs filled in `TOURNAMENTS`; scheduled scrape
-(GitHub Action, small batches, alerting); extraction-quality dashboard;
-player name-resolution table; golden fixtures for the quality gate;
-re-run features + models on real data; "low sample" flag wired through API
-and UI.
+**Source decision (2026-08-30):** Cricsheet, not ESPN scraping. Cricsheet
+publishes complete ball-by-ball ODI JSON under ODC-BY (attribution required,
+derivatives allowed) — no unofficial endpoints, no 403s, defensible licence.
+`scripts/cricsheet_ingest.py` reads `data/external/cricsheet/odis_json.zip`
+and writes `deliveries.csv` / `matches.csv` in the parser's schema
+(`source="cricsheet"`). Current pull: 2,569 men's ODIs, ~1.36M deliveries,
+2002 → 2026.
+
+**Known limitation — no length/line/shot in the source.** Cricsheet is
+scorecard + outcome granularity. `ball_length` / `ball_line` / `shot_type`
+ingest as `"unknown"`, so M1/M3 lose all delivery-type signal and the
+candidate-grid recommender (M4) cannot prescribe length × line from
+Cricsheet-only models. Real dismissal-risk, dismissal-type and expected-runs
+modelling on match context **is** unlocked. Closing the length/line gap is
+Phase 4 (labelled heuristic layer) or a separate licensed ball-tracking feed
+(open question, MEMORY.md §5).
+
+Deliverables: `cricsheet_ingest.py` ✅; `data/reference/bowler_types.csv`
+(pace/spin/hand per bowler — not in Cricsheet); player name-resolution table
+(Cricsheet `"V Kohli"` ↔ roster `"Virat Kohli"`, keyed on the registry
+Cricinfo IDs); re-run features + models on real data; "low sample" flag
+verified against real dismissal tails; ESPN `scraper.py` retained only as
+the future length/line path.
 
 **Exit gate:**
-- ≥ 1 full tournament scraped, parsed, extraction quality above floor on all
-  four fields.
+- Cricsheet ingest reproducible end to end (`cricsheet_ingest` → features →
+  train) in CI or a documented local run.
 - Models retrained on real data; M1 Brier ≥ 15% better than base rate,
   reliability curve within ±0.03 of diagonal in the 0–0.2 band (PRD §9).
 - Recommendation backtest (TRD §7) shows non-negative uplift on held-out
-  matches.
-- Legal sign-off on using scraped data for internal modeling.
+  matches **on the context features** (length/line held out until Phase 4).
+- Cricsheet ODC-BY attribution shown in the product; licence terms
+  re-confirmed for commercial use before Phase 5.
 
 ---
 

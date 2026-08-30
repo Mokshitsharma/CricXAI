@@ -6,13 +6,15 @@ PYTHON ?= python
 MATCHES ?= 100
 SEED ?= 42
 
-.PHONY: help mock features train models demo api web test lint fmt docker-up docker-down clean
+.PHONY: help mock cricsheet features train models demo real api web test lint fmt docker-up docker-down clean
 
 help:
 	@echo "mock      - generate mock ODI data ($(MATCHES) matches, seed $(SEED))"
+	@echo "cricsheet - ingest real Cricsheet ODI data -> data/processed/"
 	@echo "features  - build the leakage-free feature table"
 	@echo "train     - train M1/M2/M3 and write data/models/"
 	@echo "models    - mock + features + train"
+	@echo "real      - cricsheet + features + train (real data)"
 	@echo "demo      - models, then run the API"
 	@echo "api       - run the FastAPI dev server"
 	@echo "web       - run the Next.js dev server (web/)"
@@ -23,6 +25,9 @@ help:
 mock:
 	$(PYTHON) -m scripts.mock_data --num-matches $(MATCHES) --seed $(SEED)
 
+cricsheet:
+	$(PYTHON) -m scripts.cricsheet_ingest
+
 features:
 	$(PYTHON) -m scripts.build_features
 
@@ -30,6 +35,8 @@ train:
 	$(PYTHON) -m scripts.train
 
 models: mock features train
+
+real: cricsheet features train
 
 demo: models api
 

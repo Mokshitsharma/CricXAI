@@ -8,9 +8,22 @@ probability and type, with SHAP-based reasoning.
 
 ## Status
 
-This is an early-stage build. Data collection and feature engineering
-(Pillar 1) are implemented and tested. The FastAPI service, ML models, SHAP
-explanations, and monetization layer are not yet built.
+Early-stage build. Implemented: the data pipeline, leakage-free feature
+engineering, the three LightGBM models (M1 dismissal probability, M2
+dismissal type, M3 expected runs) with SHAP explanations, the candidate-grid
+recommendation engine, and the FastAPI `/v1` service with a single-file web
+console. Not built: persistence (Postgres/Redis), auth, and the monetization
+layer.
+
+**Data:** two sources feed the same schema.
+- `scripts/mock_data.py` — a deterministic ODI simulator (10 squads, 100
+  matches), used for tests/CI and as a development stand-in.
+- `scripts/cricsheet_ingest.py` — real ball-by-ball ODI data from
+  [Cricsheet](https://cricsheet.org) (ODC-BY), ~2,569 men's ODIs / 1.36M
+  deliveries. **Cricsheet carries no ball length / line / shot type**, so
+  those columns ingest as `"unknown"` and the length×line recommendation is
+  not yet backed by real data — see `docs/PHASES.md` Phase 2 and
+  `data/external/cricsheet/SOURCE.md`.
 
 ## Project structure
 
